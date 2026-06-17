@@ -1,0 +1,80 @@
+@import 'tailwindcss';
+/* Display = Bricolage Grotesque (distinctive, open-source); body = Geist. Both
+   bundled (self-contained — "own your app", no CDN dependency). */
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/geist';
+
+/* ── Souk design tokens (Tailwind v4 @theme) ──
+   Deliberately NOT any AI-default cluster: cool slate chrome (not cream+serif),
+   light paper (not near-black+acid), image-forward grid (not broadsheet), and a
+   TWO-tone accent — cobalt for actions, gold for price/value — so it never reads
+   as single-accent Vercel-monochrome or stock-shadcn neutral. */
+@theme {
+  --color-accent: #0a6cff;  /* Memphis sign-in accent (alias of primary) */
+  --color-ink: #0f1722;        /* slate-navy — primary text */
+  --color-ink-soft: #475569;   /* secondary text */
+  --color-paper: #f4f6f9;      /* cool off-white — page */
+  --color-surface: #ffffff;    /* cards */
+  --color-line: #e2e8f0;       /* hairlines/borders */
+  --color-cobalt: #0a6cff;     /* actions / links / CTA only */
+  --color-cobalt-ink: #06409c; /* cobalt pressed/text-on-tint */
+  --color-gold: #9a6a16;       /* PRICE / value only (AA on paper) */
+  --color-gold-bg: #f7efdc;    /* price-tag fill */
+  --color-sold: #b42318;       /* out-of-stock / destructive */
+
+  --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 14px;
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display type: tight, confident, characterful. */
+.font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+
+/* Tabular figures everywhere numbers must align (price, stock, totals). */
+.nums { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+
+/* Signature: the price-tag — gold, tabular, with a punched ticket notch. */
+.price-tag {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.85rem;
+  background: var(--color-gold-bg);
+  color: var(--color-gold);
+  border-radius: 0 6px 6px 0;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.price-tag::before { /* the punched hole of a market price tag */
+  content: '';
+  position: absolute;
+  left: 0.3rem; top: 50%; transform: translateY(-50%);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--color-paper);
+  box-shadow: inset 0 0 0 1px rgba(154, 106, 22, 0.35);
+}
+
+/* Media primitive: aspect box + cover + blur-up while loading. */
+.media { background: var(--color-line); overflow: hidden; }
+.media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media img[data-loaded='false'] { filter: blur(12px); transform: scale(1.03); }
+.media img { transition: filter .4s ease, transform .4s ease; }
+
+:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
