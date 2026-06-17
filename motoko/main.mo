@@ -6,7 +6,9 @@ import Time "mo:core/Time";
 import Array "mo:core/Array";
 import Runtime "mo:core/Runtime";
 import Result "mo:core/Result";
+import Iter "mo:core/Iter";
 import Admin "mo:thebes-lib/Admin";
+import Invoices "mo:thebes-lib/Invoices";
 
 persistent actor Store {
   type ProductId = Nat;
@@ -53,6 +55,9 @@ persistent actor Store {
   // is always taken from msg.caller, never from a passed-in principal.
   let carts = Map.empty<Principal, [CartItem]>();
   let orders = Map.empty<OrderId, Order>();
+  // Invoicing comes from the shared thebes-lib module: each checkout issues an
+  // invoice (seller → buyer) from the order's line items.
+  let invoices = Invoices.init();
 
   // First caller wins. Anonymous callers are rejected before the claim so the
   // anonymous principal can never own the store (preserved from the audit fix —
@@ -218,6 +223,20 @@ persistent actor Store {
 
     Map.add(orders, Nat.compare, orderId, order);
 
+    // Issue an invoice for this order from the shared Invoices module: the store
+    // owner is the issuer, the buyer the recipient, line items from the cart.
+    let seller = switch (Admin.getOwner(admin)) { case (?o) o; case null caller };
+    let lineItems = Array.map<(ProductId, Nat), Invoices.LineItem>(
+      Iter.toArray(Map.entries(wanted)),
+      func((pid, qty)) {
+        switch (Map.get(products, Nat.compare, pid)) {
+          case (?p) { { description = p.name; quantity = qty; unitPriceE8s = p.priceE8s } };
+          case null { { description = "item"; quantity = qty; unitPriceE8s = 0 } };
+        };
+      },
+    );
+    ignore Invoices.createIssued(invoices, Time.now(), seller, caller, lineItems, 0);
+
     // Mutation phase: one decrement per product from the validated sums.
     for ((productId, quantity) in Map.entries(wanted)) {
       switch (Map.get(products, Nat.compare, productId)) {
@@ -240,6 +259,25 @@ persistent actor Store {
   // reason so the SPA's update call resolves to a clean value or a typed error.
   public shared(msg) func checkoutOrTrap() : async Nat {
     switch (doCheckout(msg.caller)) { case (#ok(id)) { id }; case (#err(e)) { Runtime.trap(e) } };
+  };
+
+  // Invoices issued to the caller (flat view the frontend decodes directly).
+  public type InvoiceView = {
+    id : Nat; issuer : Principal; recipient : Principal;
+    subtotalE8s : Nat; taxE8s : Nat; totalE8s : Nat;
+    status : Text; itemCount : Nat; createdAt : Int;
+  };
+  public shared query (msg) func myInvoicesView() : async [InvoiceView] {
+    Array.map<Invoices.Invoice, InvoiceView>(
+      Invoices.forPrincipal(invoices, msg.caller),
+      func(i) {
+        {
+          id = i.id; issuer = i.issuer; recipient = i.recipient;
+          subtotalE8s = i.subtotalE8s; taxE8s = i.taxE8s; totalE8s = i.totalE8s;
+          status = Invoices.statusText(i.status); itemCount = i.lineItems.size(); createdAt = i.createdAt;
+        };
+      },
+    );
   };
 
   // Returns only the caller's own orders; identity from msg.caller so no
