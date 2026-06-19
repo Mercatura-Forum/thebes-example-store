@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Thebes example dapp — on-chain storefront (React + Vite + Tailwind, served as certified assets).",
+  "description": "Thebes example dapp \u2014 on-chain storefront (React + Vite + Tailwind, served as certified assets).",
   "scripts": {
     "sync-sdk": "mkdir -p public && cp node_modules/@thebes/sdk/runtime/boundary.js node_modules/@thebes/sdk/runtime/passkey.js public/",
     "dev": "npm run sync-sdk && vite",
@@ -13,7 +13,7 @@
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.2.10",
     "@fontsource-variable/geist": "^5.2.9",
-    "@thebes/sdk": "github:Mercatura-Forum/thebes-sdk#v0.1.1",
+    "@thebes/sdk": "file:vendor/@thebes/sdk",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.1"
