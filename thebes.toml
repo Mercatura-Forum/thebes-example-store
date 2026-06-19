@@ -21,7 +21,7 @@ build = 'cd motoko && mops install >/dev/null 2>&1 && mkdir -p ../build && MOC="
 
 [canisters.web]
 type = "frontend"
-cid = 204209569893049
+cid = "auto"
 wasm = "asset_canister.wasm"
 bundle = "frontend/dist"
 health_check_url = "/index.html"
