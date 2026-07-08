@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@thebes/sdk'
 import {
   STORE_CID, M, decodeProducts, decodeCategories, decodeConservation,
@@ -7,9 +7,12 @@ import {
 } from '../lib/store-api'
 import { ProductCard } from '../components/ProductCard'
 import { ProductArt } from '../components/ProductArt'
+import { CategoryRail } from '../components/CategoryRail'
 import { Hero3D } from '../components/Hero3D'
 import { Spinner, EmptyState, ErrorNote, Button } from '../components/ui'
 
+/** Category scope + search live in the URL hash (#/?cat=2&q=mug), so any view
+ *  of the souk is a shareable link. */
 export function Browse() {
   const { data, loading, error } = useQuery<Product[]>(
     STORE_CID,
@@ -19,10 +22,28 @@ export function Browse() {
   )
   const { data: cats } = useQuery<Category[]>(STORE_CID, M.categoriesView, undefined, decodeCategories)
   const { data: cons } = useQuery<Conservation[]>(STORE_CID, M.conservationView, undefined, decodeConservation)
-  const [catFilter, setCatFilter] = useState<bigint>(0n)
+
+  const [params, setParams] = useSearchParams()
+  const catFilter = BigInt(params.get('cat') ?? '0')
+  const urlQ = params.get('q') ?? ''
+  const [q, setQ] = useState(urlQ)
+  useEffect(() => { setQ(urlQ) }, [urlQ]) // back/forward + shared links win
+
   const [webglDown, setWebglDown] = useState(false)
   const onHeroFail = useCallback(() => setWebglDown(true), [])
   const shelfRef = useRef<HTMLElement>(null)
+
+  const apply = useCallback((cat: bigint, query: string) => {
+    const next = new URLSearchParams()
+    if (cat !== 0n) next.set('cat', cat.toString())
+    if (query.trim()) next.set('q', query.trim())
+    setParams(next, { replace: true })
+  }, [setParams])
+
+  const pickCategory = useCallback((id: bigint) => {
+    apply(id, q)
+    shelfRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [apply, q])
 
   if (loading) return <Spinner label="Opening the souk" />
   if (error) return <ErrorNote message={error} />
@@ -39,10 +60,21 @@ export function Browse() {
 
   const seal = cons?.[0]
   const categories = (cats ?? []).filter((c) => c.productCount > 0n)
-  const shelf = catFilter === 0n ? products : products.filter((p) => p.categoryId === catFilter)
+  const activeCat = categories.find((c) => c.id === catFilter)
+  const needle = q.trim().toLowerCase()
+  const scoped = catFilter === 0n ? products : products.filter((p) => p.categoryId === catFilter)
+  const shelf = needle
+    ? scoped.filter((p) => p.name.toLowerCase().includes(needle) || p.description.toLowerCase().includes(needle))
+    : scoped
+
+  const shelfTitle = needle
+    ? `“${q.trim()}” ${activeCat ? `in ${activeCat.name}` : 'across the souk'}`
+    : activeCat
+      ? activeCat.name
+      : 'Walk the stalls'
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-14">
       {/* The hero is the souk itself: the potter's vessel turning in the stall
           arch (real WebGL, drawn fallback), the market's claim in display type,
           and a strip of LIVE numbers from the on-chain audit under it. */}
@@ -85,30 +117,61 @@ export function Browse() {
         </div>
       </section>
 
+      {/* The aisles — first-class category navigation, shareable by URL. */}
+      <CategoryRail categories={categories} products={products} active={catFilter} onPick={pickCategory} />
+
       <section ref={shelfRef} style={{ scrollMarginTop: '5rem' }}>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-2xl font-bold">Walk the stalls</h2>
-          {categories.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by category">
-              <button className="chip" data-on={catFilter === 0n} onClick={() => setCatFilter(0n)}>
-                Everything
-              </button>
-              {categories.map((c) => (
+          <h2 className="font-display text-2xl font-bold" aria-live="polite">{shelfTitle}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search — scoped to the active aisle, instant, in the URL. */}
+            <label className="relative">
+              <span className="sr-only">Search the souk</span>
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft/60"
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden
+              >
+                <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" />
+              </svg>
+              <input
+                className="w-56 rounded-full border border-[var(--color-line)] bg-surface py-1.5 pl-9 pr-8 text-sm text-ink outline-none transition focus:border-[var(--color-cobalt)]"
+                placeholder={activeCat ? `Search ${activeCat.name}…` : 'Search the souk…'}
+                value={q}
+                onChange={(e) => { setQ(e.target.value); apply(catFilter, e.target.value) }}
+                aria-label={activeCat ? `Search within ${activeCat.name}` : 'Search all products'}
+              />
+              {q && (
                 <button
-                  key={c.id.toString()}
-                  className="chip"
-                  data-on={catFilter === c.id}
-                  onClick={() => setCatFilter(catFilter === c.id ? 0n : c.id)}
-                >
-                  {c.name}
-                  <span className="nums opacity-60">{c.productCount.toString()}</span>
-                </button>
-              ))}
-            </div>
-          )}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink"
+                  onClick={() => { setQ(''); apply(catFilter, '') }}
+                  aria-label="Clear search"
+                >✕</button>
+              )}
+            </label>
+            {activeCat && (
+              <button className="chip" data-on="true" onClick={() => apply(0n, q)}>
+                {activeCat.name} ✕
+              </button>
+            )}
+          </div>
         </div>
         {shelf.length === 0 ? (
-          <p className="text-sm text-ink-soft">Nothing in this corner of the souk yet.</p>
+          <EmptyState
+            title={needle ? `Nothing matches “${q.trim()}”` : 'Nothing in this aisle yet'}
+            hint={
+              needle
+                ? activeCat
+                  ? `No ${activeCat.name.toLowerCase()} match that. Try the whole souk, or clear the search.`
+                  : 'Try a different word — or wander the aisles instead.'
+                : 'The shopkeeper is still stocking this corner of the market.'
+            }
+            action={
+              <div className="flex justify-center gap-2">
+                {needle && <Button variant="ghost" onClick={() => { setQ(''); apply(catFilter, '') }}>Clear search</Button>}
+                {(activeCat || needle) && <Button onClick={() => { setQ(''); apply(0n, '') }}>Show everything</Button>}
+              </div>
+            }
+          />
         ) : (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
             {shelf.map((p, i) => (
