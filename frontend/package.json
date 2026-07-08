@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Thebes example dapp \u2014 on-chain storefront (React + Vite + Tailwind, served as certified assets).",
+  "description": "Thebes example dapp — on-chain storefront (React + Vite + Tailwind, served as certified assets).",
   "scripts": {
     "sync-sdk": "mkdir -p public && cp node_modules/@thebes/sdk/runtime/boundary.js node_modules/@thebes/sdk/runtime/passkey.js public/",
     "dev": "npm run sync-sdk && vite",
@@ -16,12 +16,14 @@
     "@thebes/sdk": "file:vendor/@thebes/sdk",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.1"
+    "react-router-dom": "^7.9.1",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.185.0",
     "@vitejs/plugin-react": "^5.0.0",
     "tailwindcss": "^4.1.0",
     "typescript": "~5.7.0",
