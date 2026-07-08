@@ -6,9 +6,10 @@
 
 /* ── Souk design tokens (Tailwind v4 @theme) ──
    Deliberately NOT any AI-default cluster: cool slate chrome (not cream+serif),
-   light paper (not near-black+acid), image-forward grid (not broadsheet), and a
-   TWO-tone accent — cobalt for actions, gold for price/value — so it never reads
-   as single-accent Vercel-monochrome or stock-shadcn neutral. */
+   image-forward grid (not broadsheet), and a TWO-tone accent — cobalt for
+   actions, gold for price/value — so it never reads as single-accent
+   Vercel-monochrome or stock-shadcn neutral. Dark mode swaps the paper for a
+   deep slate-navy night market; the gold price-tags read like lit stalls. */
 @theme {
   --color-accent: #0a6cff;  /* Memphis sign-in accent (alias of primary) */
   --color-ink: #0f1722;        /* slate-navy — primary text */
@@ -21,11 +22,43 @@
   --color-gold: #9a6a16;       /* PRICE / value only (AA on paper) */
   --color-gold-bg: #f7efdc;    /* price-tag fill */
   --color-sold: #b42318;       /* out-of-stock / destructive */
+  --color-leaf: #157f3d;       /* verified / balanced-books green */
 
   --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
 
   --radius-card: 14px;
+}
+
+/* Night market: applied when the user picks dark, or follows the system when
+   they haven't picked. The toggle stamps data-theme on <html>. */
+:root[data-theme='dark'] {
+  --color-ink: #e9eef6;
+  --color-ink-soft: #97a5b8;
+  --color-paper: #0c1219;
+  --color-surface: #131b26;
+  --color-line: #223042;
+  --color-cobalt: #4d94ff;
+  --color-cobalt-ink: #a9c9ff;
+  --color-gold: #d9a642;
+  --color-gold-bg: #2a2113;
+  --color-sold: #f27b70;
+  --color-leaf: #4cc37a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-ink: #e9eef6;
+    --color-ink-soft: #97a5b8;
+    --color-paper: #0c1219;
+    --color-surface: #131b26;
+    --color-line: #223042;
+    --color-cobalt: #4d94ff;
+    --color-cobalt-ink: #a9c9ff;
+    --color-gold: #d9a642;
+    --color-gold-bg: #2a2113;
+    --color-sold: #f27b70;
+    --color-leaf: #4cc37a;
+  }
 }
 
 html, body, #root { height: 100%; }
@@ -36,6 +69,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition: background-color .25s ease, color .25s ease;
 }
 
 /* Display type: tight, confident, characterful. */
@@ -64,7 +98,7 @@ body {
   left: 0.3rem; top: 50%; transform: translateY(-50%);
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--color-paper);
-  box-shadow: inset 0 0 0 1px rgba(154, 106, 22, 0.35);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-gold) 35%, transparent);
 }
 
 /* Media primitive: aspect box + cover + blur-up while loading. */
@@ -72,6 +106,56 @@ body {
 .media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .media img[data-loaded='false'] { filter: blur(12px); transform: scale(1.03); }
 .media img { transition: filter .4s ease, transform .4s ease; }
+
+/* The ledger seal: the shop's public audit line. Quiet until you read it. */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  font-size: 0.75rem;
+  color: var(--color-ink-soft);
+}
+.seal[data-ok='true'] .seal-dot { background: var(--color-leaf); color: var(--color-leaf); }
+.seal[data-ok='false'] .seal-dot { background: var(--color-sold); color: var(--color-sold); }
+.seal-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--color-line);
+}
+.seal[data-ok='true'] .seal-dot { animation: seal-breathe 3s ease-in-out infinite; }
+@keyframes seal-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-leaf) 35%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-leaf) 0%, transparent); }
+}
+
+/* Category chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.chip:hover { color: var(--color-ink); }
+.chip[data-on='true'] {
+  border-color: var(--color-cobalt);
+  color: var(--color-cobalt-ink);
+  background: color-mix(in srgb, var(--color-cobalt) 10%, transparent);
+}
+
+/* Cart badge pulse when a line lands */
+@keyframes badge-pop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.badge-pop { animation: badge-pop .35s ease; }
 
 :focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; }
 

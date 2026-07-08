@@ -4,9 +4,10 @@ import { MediaImage } from './MediaImage'
 import { PriceTag } from './ui'
 
 /** Image-forward card: the photo dominates, the price-tag is the focal accent,
- *  stock reads as a quiet status. Hover lifts the card (reduced-motion gated). */
+ *  availability reads as a quiet status. Hover lifts the card (reduced-motion
+ *  gated). "Available" is net of other shoppers' checkout holds. */
 export function ProductCard({ p }: { p: Product }) {
-  const out = p.stockCount === 0n
+  const out = p.available === 0n
   return (
     <Link
       to={`/p/${p.id}`}
@@ -16,7 +17,12 @@ export function ProductCard({ p }: { p: Product }) {
         <MediaImage path={p.photoPath} alt={p.name} ratio="1 / 1" />
         {out && (
           <span className="absolute right-2 top-2 rounded-full bg-[var(--color-sold)] px-2 py-0.5 text-[11px] font-semibold text-white">
-            Sold out
+            {p.reserved > 0n ? 'All held' : 'Sold out'}
+          </span>
+        )}
+        {p.categoryName && (
+          <span className="absolute left-2 top-2 rounded-full bg-[var(--color-paper)]/85 px-2 py-0.5 text-[11px] font-medium text-ink-soft backdrop-blur">
+            {p.categoryName}
           </span>
         )}
       </div>
@@ -24,7 +30,7 @@ export function ProductCard({ p }: { p: Product }) {
         <div className="min-w-0">
           <p className="font-display font-semibold leading-tight text-ink line-clamp-1">{p.name}</p>
           <p className="mt-0.5 text-xs text-ink-soft nums">
-            {out ? 'out of stock' : `${p.stockCount.toString()} in stock`}
+            {out ? 'none available' : `${p.available.toString()} available`}
           </p>
         </div>
         <PriceTag e8s={p.priceE8s} />
