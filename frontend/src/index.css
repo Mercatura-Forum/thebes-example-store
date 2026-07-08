@@ -5,24 +5,24 @@
 @import '@fontsource-variable/geist';
 
 /* ── Souk design tokens (Tailwind v4 @theme) ──
-   Deliberately NOT any AI-default cluster: cool slate chrome (not cream+serif),
-   image-forward grid (not broadsheet), and a TWO-tone accent — cobalt for
-   actions, gold for price/value — so it never reads as single-accent
-   Vercel-monochrome or stock-shadcn neutral. Dark mode swaps the paper for a
-   deep slate-navy night market; the gold price-tags read like lit stalls. */
+   A spice-market palette: warm sand paper, coffee ink, brass for value — and
+   INDIGO for actions (indigo dye is souk-authentic, and it keeps the chrome
+   out of the cream+terracotta cliché; terracotta lives inside the product art,
+   not the buttons). Dark mode is the night market: warm lamplight on indigo
+   dark, brass tags reading like lit stalls. */
 @theme {
-  --color-accent: #0a6cff;  /* Memphis sign-in accent (alias of primary) */
-  --color-ink: #0f1722;        /* slate-navy — primary text */
-  --color-ink-soft: #475569;   /* secondary text */
-  --color-paper: #f4f6f9;      /* cool off-white — page */
-  --color-surface: #ffffff;    /* cards */
-  --color-line: #e2e8f0;       /* hairlines/borders */
-  --color-cobalt: #0a6cff;     /* actions / links / CTA only */
-  --color-cobalt-ink: #06409c; /* cobalt pressed/text-on-tint */
-  --color-gold: #9a6a16;       /* PRICE / value only (AA on paper) */
-  --color-gold-bg: #f7efdc;    /* price-tag fill */
-  --color-sold: #b42318;       /* out-of-stock / destructive */
-  --color-leaf: #157f3d;       /* verified / balanced-books green */
+  --color-accent: #3d4d9e;     /* Memphis sign-in accent (alias of action) */
+  --color-ink: #2b2118;        /* dark coffee — primary text */
+  --color-ink-soft: #7a6a58;   /* secondary text */
+  --color-paper: #f7f2e9;      /* warm sand — page */
+  --color-surface: #fffdf8;    /* warm white — cards */
+  --color-line: #e8dfd0;       /* hairlines/borders */
+  --color-cobalt: #3d4d9e;     /* actions / links / CTA only (indigo) */
+  --color-cobalt-ink: #2c3877; /* indigo pressed/text-on-tint */
+  --color-gold: #96660f;       /* PRICE / value only (brass, AA on sand) */
+  --color-gold-bg: #f3e7c9;    /* price-tag fill */
+  --color-sold: #ab3a1c;       /* out-of-stock / destructive (burnt sienna) */
+  --color-leaf: #4e7c3a;       /* verified / balanced-books olive */
 
   --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
@@ -33,31 +33,31 @@
 /* Night market: applied when the user picks dark, or follows the system when
    they haven't picked. The toggle stamps data-theme on <html>. */
 :root[data-theme='dark'] {
-  --color-ink: #e9eef6;
-  --color-ink-soft: #97a5b8;
-  --color-paper: #0c1219;
-  --color-surface: #131b26;
-  --color-line: #223042;
-  --color-cobalt: #4d94ff;
-  --color-cobalt-ink: #a9c9ff;
-  --color-gold: #d9a642;
-  --color-gold-bg: #2a2113;
-  --color-sold: #f27b70;
-  --color-leaf: #4cc37a;
+  --color-ink: #f3ead9;
+  --color-ink-soft: #b3a288;
+  --color-paper: #171009;
+  --color-surface: #221910;
+  --color-line: #3a2e1e;
+  --color-cobalt: #94a5ff;
+  --color-cobalt-ink: #c3cdff;
+  --color-gold: #dfae52;
+  --color-gold-bg: #33270f;
+  --color-sold: #ef8465;
+  --color-leaf: #8fbf6a;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --color-ink: #e9eef6;
-    --color-ink-soft: #97a5b8;
-    --color-paper: #0c1219;
-    --color-surface: #131b26;
-    --color-line: #223042;
-    --color-cobalt: #4d94ff;
-    --color-cobalt-ink: #a9c9ff;
-    --color-gold: #d9a642;
-    --color-gold-bg: #2a2113;
-    --color-sold: #f27b70;
-    --color-leaf: #4cc37a;
+    --color-ink: #f3ead9;
+    --color-ink-soft: #b3a288;
+    --color-paper: #171009;
+    --color-surface: #221910;
+    --color-line: #3a2e1e;
+    --color-cobalt: #94a5ff;
+    --color-cobalt-ink: #c3cdff;
+    --color-gold: #dfae52;
+    --color-gold-bg: #33270f;
+    --color-sold: #ef8465;
+    --color-leaf: #8fbf6a;
   }
 }
 
@@ -78,7 +78,7 @@ body {
 /* Tabular figures everywhere numbers must align (price, stock, totals). */
 .nums { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
 
-/* Signature: the price-tag — gold, tabular, with a punched ticket notch. */
+/* Signature: the price-tag — brass, tabular, with a punched ticket notch. */
 .price-tag {
   position: relative;
   display: inline-flex;
@@ -100,6 +100,43 @@ body {
   background: var(--color-paper);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-gold) 35%, transparent);
 }
+
+/* ── The stall arch — the storefront's signature. Every product sits in a
+   horseshoe-arch niche, like a stall in a covered market. One shape, used
+   everywhere the product is the subject; the rest of the chrome stays quiet. */
+.arch {
+  border-radius: 999px 999px var(--radius-card) var(--radius-card);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 0%,
+      color-mix(in srgb, var(--color-gold) 14%, transparent), transparent 60%),
+    var(--color-surface);
+  border: 1px solid var(--color-line);
+}
+.arch-inner { /* inner keyline echoing the arch */
+  position: absolute; inset: 7px;
+  border-radius: 999px 999px 10px 10px;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 28%, transparent);
+  pointer-events: none;
+}
+
+/* Product art breathes inside its arch on hover; ambient float in the hero. */
+.art-frame { position: relative; }
+.art-frame svg { width: 100%; height: 100%; display: block; }
+.group:hover .art-lift { transform: translateY(-4px) scale(1.02); }
+.art-lift { transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.hero-float { animation: hero-float 7s ease-in-out infinite; }
+
+/* Entrance: cards reveal in a quick stagger as the shelf loads. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise { opacity: 0; animation: rise-in .5s cubic-bezier(.2,.8,.2,1) forwards; }
 
 /* Media primitive: aspect box + cover + blur-up while loading. */
 .media { background: var(--color-line); overflow: hidden; }
@@ -131,6 +168,19 @@ body {
   50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-leaf) 0%, transparent); }
 }
 
+/* The live market strip in the hero — real numbers from the on-chain audit. */
+.market-strip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.1rem;
+  border-top: 1px solid var(--color-line);
+  padding-top: 0.8rem;
+  font-size: 0.8rem;
+  color: var(--color-ink-soft);
+}
+.market-strip b { color: var(--color-ink); font-weight: 600; }
+
 /* Category chips */
 .chip {
   display: inline-flex;
@@ -161,4 +211,5 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  .rise { opacity: 1; }
 }

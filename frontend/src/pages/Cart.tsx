@@ -84,7 +84,7 @@ export function Cart() {
         {lines.map((l) => (
           <li key={l.productId.toString()} className="flex items-center gap-3 px-4 py-3">
             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg">
-              <MediaImage path={l.photoPath} alt={l.name} ratio="1 / 1" />
+              <MediaImage path={l.photoPath} alt={l.name} ratio="1 / 1" artId={l.productId} artName={l.name} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-ink line-clamp-1">{l.name}</p>

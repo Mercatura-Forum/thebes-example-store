@@ -1,16 +1,14 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@thebes/sdk'
-import { STORE_CID, M, decodeProducts, decodeCategories, type Product, type Category } from '../lib/store-api'
+import {
+  STORE_CID, M, decodeProducts, decodeCategories, decodeConservation,
+  type Product, type Category, type Conservation,
+} from '../lib/store-api'
 import { ProductCard } from '../components/ProductCard'
-import { MediaImage } from '../components/MediaImage'
-import { PriceTag, Spinner, EmptyState, ErrorNote, Button } from '../components/ui'
-
-/** Pick a hero: the first in-stock product that has a photo (the photo is the
- *  thesis of the page), else the first product. */
-function pickHero(products: Product[]): Product | undefined {
-  return products.find((p) => p.photoPath && p.available > 0n) ?? products.find((p) => p.photoPath) ?? products[0]
-}
+import { ProductArt } from '../components/ProductArt'
+import { Hero3D } from '../components/Hero3D'
+import { Spinner, EmptyState, ErrorNote, Button } from '../components/ui'
 
 export function Browse() {
   const { data, loading, error } = useQuery<Product[]>(
@@ -20,55 +18,76 @@ export function Browse() {
     decodeProducts,
   )
   const { data: cats } = useQuery<Category[]>(STORE_CID, M.categoriesView, undefined, decodeCategories)
+  const { data: cons } = useQuery<Conservation[]>(STORE_CID, M.conservationView, undefined, decodeConservation)
   const [catFilter, setCatFilter] = useState<bigint>(0n)
+  const [webglDown, setWebglDown] = useState(false)
+  const onHeroFail = useCallback(() => setWebglDown(true), [])
+  const shelfRef = useRef<HTMLElement>(null)
 
-  if (loading) return <Spinner label="Loading the shop" />
+  if (loading) return <Spinner label="Opening the souk" />
   if (error) return <ErrorNote message={error} />
   const products = data ?? []
   if (products.length === 0) {
     return (
       <EmptyState
-        title="The shelves are empty"
-        hint="This shop has no products yet. Open Admin to add the first one — with a real on-chain photo."
+        title="The stalls are empty"
+        hint="This souk has no products yet. Open Admin to add the first one — with its own on-chain artwork."
         action={<Link to="/admin"><Button>Go to Admin</Button></Link>}
       />
     )
   }
 
-  const hero = pickHero(products)!
+  const seal = cons?.[0]
   const categories = (cats ?? []).filter((c) => c.productCount > 0n)
-  const shelf = catFilter === 0n
-    ? products.filter((p) => p.id !== hero.id)
-    : products.filter((p) => p.categoryId === catFilter)
+  const shelf = catFilter === 0n ? products : products.filter((p) => p.categoryId === catFilter)
 
   return (
-    <div className="space-y-12">
-      {/* Hero — the most characteristic thing in the shop's world: a product,
-          full-bleed, with its price-tag. Not a big-number-and-gradient template. */}
-      <section className="grid items-stretch gap-6 md:grid-cols-2">
-        <Link to={`/p/${hero.id}`} className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)]">
-          <MediaImage path={hero.photoPath} alt={hero.name} ratio="4 / 3" />
-        </Link>
-        <div className="flex flex-col justify-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-ink-soft">
-            {hero.categoryName || 'Featured'}
-          </p>
-          <h1 className="font-display mt-2 text-4xl font-extrabold leading-[1.05] text-ink md:text-5xl">
-            {hero.name}
+    <div className="space-y-16">
+      {/* The hero is the souk itself: the potter's vessel turning in the stall
+          arch (real WebGL, drawn fallback), the market's claim in display type,
+          and a strip of LIVE numbers from the on-chain audit under it. */}
+      <section className="grid items-center gap-10 md:grid-cols-[5fr_6fr]">
+        <div className="arch relative mx-auto aspect-[4/5] w-full max-w-sm hero-float">
+          <span className="arch-inner" />
+          {webglDown
+            ? <ProductArt id={1n} name="Stoneware Mug" className="h-full w-full" />
+            : <Hero3D onFail={onHeroFail} />}
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-gold)]">An on-chain souk</p>
+          <h1 className="font-display mt-3 text-5xl font-extrabold leading-[0.96] text-ink md:text-7xl" style={{ textWrap: 'balance' }}>
+            A market that keeps honest books.
           </h1>
-          <p className="mt-3 max-w-prose text-ink-soft line-clamp-3">{hero.description}</p>
-          <div className="mt-5 flex items-center gap-4">
-            <PriceTag e8s={hero.priceE8s} size="lg" />
-            <Link to={`/p/${hero.id}`}>
-              <Button>View product</Button>
+          <p className="mt-5 max-w-prose text-lg leading-relaxed text-ink-soft">
+            Hand-picked goods on an open ledger. The shelves, the checkout holds
+            and the audit all live on-chain — nothing behind the counter.
+          </p>
+          <div className="mt-7 flex flex-wrap items-center gap-4">
+            <Button onClick={() => shelfRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              Walk the stalls
+            </Button>
+            <Link to="/orders" className="text-sm font-medium text-[var(--color-cobalt)] hover:underline">
+              Track an order →
             </Link>
           </div>
+          {seal && (
+            <p className="market-strip mt-8">
+              <span><b className="nums">{seal.productsChecked.toString()}</b> products</span>
+              <span><b className="nums">{seal.unitsOnHand.toString()}</b> units on the shelves</span>
+              {seal.unitsReserved > 0n && (
+                <span><b className="nums">{seal.unitsReserved.toString()}</b> held at checkout</span>
+              )}
+              <span className={seal.violations === 0n ? 'text-[var(--color-leaf)]' : 'text-[var(--color-sold)]'}>
+                {seal.violations === 0n ? '✓ books audited on-chain' : '✗ audit found violations'}
+              </span>
+            </p>
+          )}
         </div>
       </section>
 
-      <section>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-xl font-bold">The shelf</h2>
+      <section ref={shelfRef} style={{ scrollMarginTop: '5rem' }}>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-2xl font-bold">Walk the stalls</h2>
           {categories.length > 0 && (
             <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by category">
               <button className="chip" data-on={catFilter === 0n} onClick={() => setCatFilter(0n)}>
@@ -91,9 +110,11 @@ export function Browse() {
         {shelf.length === 0 ? (
           <p className="text-sm text-ink-soft">Nothing in this corner of the souk yet.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {shelf.map((p) => (
-              <ProductCard key={p.id.toString()} p={p} />
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+            {shelf.map((p, i) => (
+              <div key={p.id.toString()} className="rise" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
+                <ProductCard p={p} />
+              </div>
             ))}
           </div>
         )}

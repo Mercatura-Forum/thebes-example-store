@@ -260,7 +260,7 @@ function CatalogueRow({ p, categories, onChanged }: { p: AdminProduct; categorie
     <li className={`rounded-[var(--radius-card)] border border-[var(--color-line)] bg-surface p-3 ${p.archived ? 'opacity-60' : ''}`}>
       <div className="flex items-center gap-3">
         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg">
-          <MediaImage path={p.photoPath} alt={p.name} ratio="1 / 1" />
+          <MediaImage path={p.photoPath} alt={p.name} ratio="1 / 1" artId={p.id} artName={p.name} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-medium text-ink line-clamp-1">
