@@ -14,7 +14,7 @@ export const STORE_CID: number =
   (typeof window !== 'undefined' && window.STORE_CID) || 262529626459267
 
 export const MEDIA_CID: number =
-  (typeof window !== 'undefined' && window.MEDIA_CID) || 201025201603509
+  (typeof window !== 'undefined' && window.MEDIA_CID) || 199651578293719
 
 /** Token has 8 decimals (e8s). Format a base-unit price for display. */
 export function formatPrice(e8s: bigint | number): string {
