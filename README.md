@@ -1,10 +1,24 @@
 # thebes-example-store
 
 An on-chain storefront built on [Thebes Protocol](https://github.com/Mercatura-Forum/Thebes-Protocol-):
-a Motoko backend that holds the product catalog, carts, and orders, and a React
-frontend served as certified assets. It demonstrates the full shape of a Thebes
-application — passkey sign-in, controller-gated admin, paginated reads, and
-threshold-signed on-chain state — in one self-contained example.
+a Motoko backend that holds the catalog, carts, checkout holds, orders and
+invoices, and a React frontend served as certified assets — with a procedural
+3D hero, hand-drawn product art, categories and scoped search.
+
+The property this example proves is **inventory conservation**. Every unit that
+enters the shop is accounted across on-hand stock, checkout holds, sales and
+returns, and anyone can re-verify the ledger identity at any time through the
+public oracle (`invariantReportView` / `conservationView`):
+
+```
+onHand + sold == received + returned      (per product)
+reserved      == Σ active checkout holds
+reserved      <= onHand
+```
+
+Checkout is validate-all-then-mutate inside one message; promo discounts are
+allocated into invoice line items unit-exactly, so an invoice total always
+equals the charged total.
 
 ## Architecture
 
@@ -30,12 +44,16 @@ deploy time (see [Deploy](#deploy)).
 
 | Method | Kind | Purpose |
 | --- | --- | --- |
-| `getProducts` / `getProductsView` | query | Browse the catalog. |
-| `seedDemo` | update | Populate demo products (admin). |
-| `addProduct` / `restockProduct` / `setProductPhoto` | update | Catalog management (admin). |
-| `addToCart` / `getCartView` | update / query | Build and read the caller's cart. |
-| `checkoutOrTrap` | update | Place an order; traps on any guard failure so the client never silently ignores an error. |
-| `updateOrderStatus` | update | Advance an order (admin). |
+| `getProductsView` / `getCategoriesView` | query | Browse the catalog and its categories (availability is net of other shoppers' holds). |
+| `seedDemo` | update | Populate a demo shop — categories, products, promo codes. |
+| `addProduct` / `updateProduct` / `restockProduct` / `setProductPhoto` / `setProductArchived` | update | Catalogue management (admin); archive keeps history intact. |
+| `addCategory` / `renameCategory` / `createDiscount` / `setDiscountActive` | update | Categories and promo codes (admin). |
+| `addToCart` / `setCartQuantity` / `removeFromCart` / `getCartView` | update / query | Build and edit the caller's cart. |
+| `beginCheckoutOrTrap` / `quoteCheckoutView` / `checkoutOrTrap` | update / query / update | Take a 10-minute stock hold, price it (promo validated by the same on-chain rules), place the order atomically. |
+| `cancelOrderOrTrap` / `shipOrder` / `deliverOrder` / `refundOrder` | update | Order lifecycle; cancel and refund restock and void the invoice. |
+| `getOrderHistoryView` / `getOrderLinesView` / `getOrderEventsView` / `myInvoicesView` | query | The caller's orders (price-snapshotted lines), per-order timeline, invoices. |
+| `getShopStatsView` / `getAuditView` | query | Shop dashboard and the append-only audit trail (admin). |
+| `invariantReportView` / `conservationView` | query | **The public oracle** — recomputes the conservation laws; an empty report is the proof. |
 | `claimOwner` / `addAdmin` / `setPaused` | update | Ownership and admin surface (from `thebes-lib`'s `Admin`). |
 
 The token uses 8 decimals (e8s); prices are stored and returned in base units.
