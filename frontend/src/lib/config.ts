@@ -11,7 +11,7 @@ declare global {
 }
 
 export const STORE_CID: number =
-  (typeof window !== 'undefined' && window.STORE_CID) || 34321969660512
+  (typeof window !== 'undefined' && window.STORE_CID) || 262529626459267
 
 export const MEDIA_CID: number =
   (typeof window !== 'undefined' && window.MEDIA_CID) || 201025201603509

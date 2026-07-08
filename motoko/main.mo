@@ -11,6 +11,7 @@ import Result "mo:core/Result";
 import Iter "mo:core/Iter";
 import Admin "mo:thebes-lib/Admin";
 import Invoices "mo:thebes-lib/Invoices";
+import Migration "Migration";
 
 // Souk — an on-chain storefront that keeps honest books.
 //
@@ -25,6 +26,10 @@ import Invoices "mo:thebes-lib/Invoices";
 // is recomputable by ANYONE at ANY time via the public `invariantReportView`
 // query. Checkout is validate-all-then-mutate inside one message, so a failed
 // order can never leave the books in a partial state.
+// The v1 → v2 upgrade transforms the live state shape (see Migration.mo):
+// stockCount becomes the conservation ledger, and order items become priced
+// lines. State-preserving — nothing is reset.
+(with migration = Migration.run)
 persistent actor Store {
   type ProductId = Nat;
   type OrderId = Nat;
