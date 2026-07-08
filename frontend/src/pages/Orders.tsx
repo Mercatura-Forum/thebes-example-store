@@ -6,7 +6,7 @@ import {
   argNat, type OrderRow, type OrderLine, type OrderEvent,
 } from '../lib/store-api'
 import { formatPrice } from '../lib/config'
-import { whenDate, whenExact } from '../lib/format'
+import { whenDate, whenExact, useChainTime } from '../lib/format'
 import { StatusTrail } from '../components/StatusTrail'
 import { Spinner, EmptyState, ErrorNote, Button } from '../components/ui'
 
@@ -21,6 +21,7 @@ const EVENT_LABELS: Record<string, string> = {
 export function Orders() {
   const { data, loading, error, refetch } = useQuery<OrderRow[]>(STORE_CID, M.ordersView, undefined, decodeOrders)
   const [openId, setOpenId] = useState<bigint>()
+  useChainTime() // re-render once chain→wall calibration lands
 
   if (loading) return <Spinner label="Loading orders" />
   if (error) return <ErrorNote message={error} />

@@ -5,7 +5,7 @@ import {
   argPage, type AdminOrderRow,
 } from '../../lib/store-api'
 import { formatPrice } from '../../lib/config'
-import { whenExact, shortHex } from '../../lib/format'
+import { whenExact, shortHex, useChainTime } from '../../lib/format'
 import { StatusTrail } from '../StatusTrail'
 import { Spinner, ErrorNote, Button, EmptyState } from '../ui'
 import { errStr } from './common'
@@ -17,6 +17,7 @@ const PAGE = 25
  *  the UI only ever offers moves the contract will accept. */
 export function OrdersTab() {
   const [offset, setOffset] = useState(0)
+  useChainTime() // re-render once chain→wall calibration lands
   const arg = useMemo(() => argPage(offset, PAGE), [offset])
   const { data, loading, error, refetch } = useQuery<AdminOrderRow[]>(STORE_CID, M.allOrdersView, arg, decodeAdminOrders, [offset])
 

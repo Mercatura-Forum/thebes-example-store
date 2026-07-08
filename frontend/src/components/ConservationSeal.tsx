@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@thebes/sdk'
 import { STORE_CID, M, decodeConservation, decodeViolations, type Conservation, type InvariantViolation } from '../lib/store-api'
+import { calibrateChainTime } from '../lib/format'
 
 /**
  * The shop's public audit line. It calls the backend's conservation oracle —
@@ -12,6 +13,12 @@ export function ConservationSeal() {
   const [open, setOpen] = useState(false)
   const { data } = useQuery<Conservation[]>(STORE_CID, M.conservationView, undefined, decodeConservation)
   const seal = data?.[0]
+
+  // The audit reply carries the chain's "now" — calibrate chain→wall time for
+  // every date the app renders (chain time counts from genesis, not 1970).
+  useEffect(() => {
+    if (seal) calibrateChainTime(seal.checkedAt)
+  }, [seal])
 
   if (!seal) return null
   const ok = seal.violations === 0n

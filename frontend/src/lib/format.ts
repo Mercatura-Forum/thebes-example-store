@@ -1,4 +1,5 @@
 /** Shared formatting for money, quantities and chain time. */
+import { useEffect, useState } from 'react'
 export { formatPrice } from './config'
 
 /** Parse a human price ("12.50") into e8s base units. */
@@ -8,16 +9,49 @@ export function toE8s(s: string): bigint {
   return BigInt(w || '0') * 100_000_000n + BigInt(frac || '0')
 }
 
-/** Chain time (ns) → short local date. */
+// ── Chain time ──
+// The chain's Time.now() counts ns since GENESIS, not the Unix epoch, so a raw
+// timestamp renders as 1970. Any view that carries a chain "now" (the seal's
+// conservation check, the checkout hold) calibrates a chain→wall offset once;
+// after that every timestamp renders as real local time.
+let chainOffsetNs: bigint | undefined
+
+export function calibrateChainTime(chainNowNs: bigint) {
+  const next = BigInt(Date.now()) * 1_000_000n - chainNowNs
+  const first = chainOffsetNs === undefined
+  chainOffsetNs = next
+  if (first) window.dispatchEvent(new CustomEvent('souk:chain-time'))
+}
+
+/** Re-render the caller once calibration lands (dates upgrade in place). */
+export function useChainTime(): boolean {
+  const [ready, setReady] = useState(chainOffsetNs !== undefined)
+  useEffect(() => {
+    if (ready) return
+    const on = () => setReady(true)
+    window.addEventListener('souk:chain-time', on)
+    return () => window.removeEventListener('souk:chain-time', on)
+  }, [ready])
+  return ready
+}
+
+function toWallDate(ns: bigint): Date | undefined {
+  if (chainOffsetNs === undefined) return undefined
+  return new Date(Number((ns + chainOffsetNs) / 1_000_000n))
+}
+
+/** Chain time (ns) → short local date ("Jul 7, 2026"). */
 export function whenDate(ns: bigint): string {
-  const ms = Number(ns / 1_000_000n)
-  return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  const d = toWallDate(ns)
+  if (!d) return '…'
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 /** Chain time (ns) → local date + time (for timelines and the audit feed). */
 export function whenExact(ns: bigint): string {
-  const ms = Number(ns / 1_000_000n)
-  return new Date(ms).toLocaleString(undefined, {
+  const d = toWallDate(ns)
+  if (!d) return '…'
+  return d.toLocaleString(undefined, {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }
@@ -26,14 +60,6 @@ export function whenExact(ns: bigint): string {
 export function shortHex(hex: string): string {
   if (hex.length <= 12) return hex
   return `${hex.slice(0, 6)}…${hex.slice(-4)}`
-}
-
-/** mm:ss remaining between two chain timestamps (ns), floored at zero. */
-export function countdown(expiresAt: bigint, nowNs: bigint): string {
-  const left = expiresAt > nowNs ? Number((expiresAt - nowNs) / 1_000_000_000n) : 0
-  const m = Math.floor(left / 60)
-  const s = left % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 /** Notify the app shell that the cart changed (badge refresh). */

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useUpdate } from '@thebes/sdk'
 import { STORE_CID, M, decodeProducts, addToCart, type Product } from '../lib/store-api'
@@ -15,6 +15,15 @@ export function ProductPage() {
   const [added, setAdded] = useState(false)
   const [busy, setBusy] = useState(false)
   const [addErr, setAddErr] = useState<string>()
+
+  // Product-to-product navigation is a same-document hash change, so this
+  // component instance survives it — reset the purchase state per product.
+  // (Caught live: qty carried from one product to the next and over-ordered.)
+  useEffect(() => {
+    setQty(1)
+    setAdded(false)
+    setAddErr(undefined)
+  }, [id])
 
   if (loading) return <Spinner label="Loading product" />
   if (error) return <ErrorNote message={error} />

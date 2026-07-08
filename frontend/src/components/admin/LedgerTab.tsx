@@ -4,7 +4,7 @@ import {
   STORE_CID, M, decodeAdminProducts, decodeViolations, decodeAudit, argPage,
   type AdminProduct, type InvariantViolation, type AuditRow,
 } from '../../lib/store-api'
-import { whenExact, shortHex } from '../../lib/format'
+import { whenExact, shortHex, useChainTime } from '../../lib/format'
 import { Spinner, ErrorNote, Button } from '../ui'
 
 /** The open books: the per-product conservation ledger, the recomputed
@@ -84,6 +84,7 @@ const PAGE = 25
 
 function AuditFeed() {
   const [offset, setOffset] = useState(0)
+  useChainTime() // re-render once chain→wall calibration lands
   const arg = useMemo(() => argPage(offset, PAGE), [offset])
   const { data, loading, error } = useQuery<AuditRow[]>(STORE_CID, M.auditView, arg, decodeAudit, [offset])
 

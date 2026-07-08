@@ -6,7 +6,7 @@ import {
   argText, type Hold, type HoldLine, type Quote,
 } from '../lib/store-api'
 import { formatPrice } from '../lib/config'
-import { pokeCart } from '../lib/format'
+import { pokeCart, calibrateChainTime } from '../lib/format'
 import { MediaImage } from '../components/MediaImage'
 import { PriceTag, Button, Spinner, EmptyState, ErrorNote, HoldRing } from '../components/ui'
 
@@ -36,6 +36,7 @@ export function Checkout() {
   const [secondsLeft, setSecondsLeft] = useState<number>()
   useEffect(() => {
     if (!hold) return
+    calibrateChainTime(hold.nowNs)
     const leftAtLoad = Number((hold.expiresAt - hold.nowNs) / 1_000_000_000n)
     const loadedAt = Date.now()
     const tick = () => {
