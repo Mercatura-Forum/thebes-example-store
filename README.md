@@ -1,6 +1,6 @@
 # thebes-example-store
 
-An on-chain storefront built on [Thebes Protocol](https://github.com/Mercatura-Forum/Thebes-Protocol-):
+An on-chain storefront built on [Thebes Protocol](https://thebesprotocol.com):
 a Motoko backend that holds the catalog, carts, checkout holds, orders and
 invoices, and a React frontend served as certified assets — with a procedural
 3D hero, hand-drawn product art, categories and scoped search.
