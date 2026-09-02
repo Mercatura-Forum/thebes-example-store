@@ -7,24 +7,26 @@ import { formatPrice } from '../../lib/config'
 import { toE8s } from '../../lib/format'
 import { Spinner, ErrorNote, Button, EmptyState } from '../ui'
 import { Field, Card, inputCls, errStr } from './common'
+import { useT } from '../../lib/i18n'
 
 /** Promo codes with live redemption counters; create percent or fixed codes
  *  with an optional order minimum and redemption cap. */
 export function PromosTab() {
+  const t = useT()
   const { data, loading, error, refetch } = useQuery<Discount[]>(STORE_CID, M.discountsView, undefined, decodeDiscounts)
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr]">
       <CreatePromoCard onChanged={refetch} />
       <section>
-        <h2 className="font-display text-lg font-bold">Live codes</h2>
+        <h2 className="font-display text-lg font-bold">{t.liveCodes}</h2>
         {loading ? (
           <div className="mt-4"><Spinner /></div>
         ) : error ? (
           <div className="mt-4"><ErrorNote message={error} /></div>
         ) : (data ?? []).length === 0 ? (
           <div className="mt-4">
-            <EmptyState title="No promo codes" hint="Create one — buyers apply it at checkout and the discount lands on the invoice, unit-exactly." />
+            <EmptyState title={t.noPromosTitle} hint={t.noPromosHint} />
           </div>
         ) : (
           <ul className="mt-4 space-y-3">
@@ -39,6 +41,7 @@ export function PromosTab() {
 }
 
 function CreatePromoCard({ onChanged }: { onChanged: () => void }) {
+  const t = useT()
   const [code, setCode] = useState('')
   const [kind, setKind] = useState<'percent' | 'fixed'>('percent')
   const [value, setValue] = useState('')
@@ -61,7 +64,7 @@ function CreatePromoCard({ onChanged }: { onChanged: () => void }) {
         Number(maxRed || '0'),
         0n,
       )
-      setNote(`Code ${code.trim().toUpperCase()} is live`)
+      setNote(t.codeLive(code.trim().toUpperCase()))
       setCode(''); setValue(''); setMinSub(''); setMaxRed('')
       onChanged()
     } catch (e) {
@@ -72,27 +75,27 @@ function CreatePromoCard({ onChanged }: { onChanged: () => void }) {
   }
 
   return (
-    <Card title="New promo code">
+    <Card title={t.newPromo}>
       <div className="mt-4 space-y-3">
-        <Field label="Code">
-          <input className={`${inputCls} uppercase tracking-wide`} value={code} onChange={(e) => setCode(e.target.value)} placeholder="WELCOME10" autoComplete="off" />
+        <Field label={t.fieldCode}>
+          <input className={`${inputCls} uppercase tracking-wide`} dir="ltr" value={code} onChange={(e) => setCode(e.target.value)} placeholder="WELCOME10" autoComplete="off" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Type">
+          <Field label={t.fieldType}>
             <select className={inputCls} value={kind} onChange={(e) => setKind(e.target.value as 'percent' | 'fixed')}>
-              <option value="percent">Percent off</option>
-              <option value="fixed">Fixed amount off</option>
+              <option value="percent">{t.percentOff}</option>
+              <option value="fixed">{t.fixedOff}</option>
             </select>
           </Field>
-          <Field label={kind === 'percent' ? 'Percent (%)' : 'Amount (◈)'}>
+          <Field label={kind === 'percent' ? t.fieldPercent : t.fieldAmount}>
             <input className={`${inputCls} nums`} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder={kind === 'percent' ? '10' : '5.00'} />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Order minimum (◈, optional)">
+          <Field label={t.fieldMinimum}>
             <input className={`${inputCls} nums`} inputMode="decimal" value={minSub} onChange={(e) => setMinSub(e.target.value)} placeholder="0" />
           </Field>
-          <Field label="Max redemptions (0 = ∞)">
+          <Field label={t.fieldMaxRedemptions}>
             <input className={`${inputCls} nums`} inputMode="numeric" value={maxRed} onChange={(e) => setMaxRed(e.target.value)} placeholder="0" />
           </Field>
         </div>
@@ -100,13 +103,14 @@ function CreatePromoCard({ onChanged }: { onChanged: () => void }) {
       {err && <div className="mt-3"><ErrorNote message={err} /></div>}
       {note && <p className="mt-3 text-sm text-[var(--color-cobalt-ink)]">{note}</p>}
       <Button className="mt-4 w-full" onClick={create} disabled={busy || !code.trim() || !value.trim()}>
-        {busy ? 'Creating…' : 'Create code'}
+        {busy ? t.creating : t.createCode}
       </Button>
     </Card>
   )
 }
 
 function PromoRow({ d, onChanged }: { d: Discount; onChanged: () => void }) {
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string>()
 
@@ -124,8 +128,8 @@ function PromoRow({ d, onChanged }: { d: Discount; onChanged: () => void }) {
   }
 
   const worth = d.percentBps > 0n
-    ? `${(Number(d.percentBps) / 100).toString()}% off`
-    : `◈${formatPrice(d.fixedE8s)} off`
+    ? t.worthPercent((Number(d.percentBps) / 100).toString())
+    : t.worthFixed(formatPrice(d.fixedE8s))
 
   return (
     <li className={`rounded-[var(--radius-card)] border border-[var(--color-line)] bg-surface p-4 ${d.active ? '' : 'opacity-60'}`}>
@@ -133,17 +137,17 @@ function PromoRow({ d, onChanged }: { d: Discount; onChanged: () => void }) {
         <div>
           <p className="font-display font-bold tracking-wide">
             {d.code}
-            {!d.active && <span className="ml-2 rounded-full bg-[var(--color-line)] px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-soft">off</span>}
+            {!d.active && <span className="ms-2 rounded-full bg-[var(--color-line)] px-2 py-0.5 text-[10px] font-semibold uppercase text-ink-soft">{t.offBadge}</span>}
           </p>
           <p className="mt-0.5 text-xs text-ink-soft nums">
             {worth}
-            {d.minSubtotalE8s > 0n && ` · min ◈${formatPrice(d.minSubtotalE8s)}`}
+            {d.minSubtotalE8s > 0n && ` · ${t.minTag(formatPrice(d.minSubtotalE8s))}`}
             {' · '}
-            {d.redemptions.toString()}{d.maxRedemptions > 0n ? ` / ${d.maxRedemptions.toString()}` : ''} redeemed
+            {t.redeemed(d.redemptions, d.maxRedemptions)}
           </p>
         </div>
         <Button variant="ghost" className="px-3 py-1 text-xs" onClick={toggle} disabled={busy}>
-          {d.active ? 'Deactivate' : 'Reactivate'}
+          {d.active ? t.deactivate : t.reactivate}
         </Button>
       </div>
       {err && <div className="mt-2"><ErrorNote message={err} /></div>}

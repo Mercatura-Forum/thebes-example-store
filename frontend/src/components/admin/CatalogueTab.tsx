@@ -12,10 +12,12 @@ import { formatPrice } from '../../lib/config'
 import { MediaImage } from '../MediaImage'
 import { Button, Spinner, ErrorNote } from '../ui'
 import { Field, Card, inputCls, errStr } from './common'
+import { useT } from '../../lib/i18n'
 
 /** Catalogue management: create products (with on-chain photos + categories),
  *  edit copy/price/category in place, restock, archive. */
 export function CatalogueTab() {
+  const t = useT()
   const { data, loading, error, refetch } = useQuery<AdminProduct[]>(STORE_CID, M.adminProductsView, undefined, decodeAdminProducts)
   const { data: cats, refetch: refetchCats } = useQuery<Category[]>(STORE_CID, M.categoriesView, undefined, decodeCategories)
   const products = data ?? []
@@ -29,7 +31,7 @@ export function CatalogueTab() {
       </section>
 
       <section>
-        <h2 className="font-display text-lg font-bold">Catalogue</h2>
+        <h2 className="font-display text-lg font-bold">{t.catalogueHeading}</h2>
         {loading ? (
           <div className="mt-4"><Spinner /></div>
         ) : error ? (
@@ -48,6 +50,7 @@ export function CatalogueTab() {
 }
 
 function SeedCard({ onChanged }: { onChanged: () => void }) {
+  const t = useT()
   const [seeding, setSeeding] = useState(false)
   const [err, setErr] = useState<string>()
   async function seed() {
@@ -58,18 +61,18 @@ function SeedCard({ onChanged }: { onChanged: () => void }) {
   return (
     <Card>
       <p className="text-sm text-ink-soft">
-        No products yet. Add the first one — or load the demo shop (3 categories,
-        8 products, 2 promo codes) to see everything working.
+        {t.seedExplainer}
       </p>
       {err && <div className="mt-2"><ErrorNote message={err} /></div>}
       <Button className="mt-3" variant="ghost" onClick={seed} disabled={seeding}>
-        {seeding ? 'Loading…' : 'Load demo shop'}
+        {seeding ? t.loadingSimple : t.loadDemoShop}
       </Button>
     </Card>
   )
 }
 
 function NewProductCard({ categories, onChanged }: { categories: Category[]; onChanged: () => void }) {
+  const t = useT()
   const media = useMediaUpload(MEDIA_CID)
   const fileRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState('')
@@ -99,7 +102,7 @@ function NewProductCard({ categories, onChanged }: { categories: Category[]; onC
     setNote(undefined)
     try {
       const id = await addProduct(name.trim(), desc.trim(), toE8s(price), Number(stock || '0'), BigInt(catId), photoPath)
-      setNote(`Added product #${id.toString()}`)
+      setNote(t.addedProduct(id))
       setName(''); setDesc(''); setPrice(''); setStock(''); setCatId('0'); setPhotoPath(null)
       if (fileRef.current) fileRef.current.value = ''
       onChanged()
@@ -113,11 +116,11 @@ function NewProductCard({ categories, onChanged }: { categories: Category[]; onC
   const canSubmit = name.trim() && price.trim() && !busy && !media.busy
 
   return (
-    <Card title="Add a product">
-      <label className="mt-4 block text-sm font-medium">Photo</label>
+    <Card title={t.addAProduct}>
+      <label className="mt-4 block text-sm font-medium">{t.photo}</label>
       <div className="mt-2 flex items-center gap-4">
         <div className="w-28 shrink-0 overflow-hidden rounded-lg border border-[var(--color-line)]">
-          <MediaImage path={photoPath ?? ''} alt="New product" ratio="1 / 1" />
+          <MediaImage path={photoPath ?? ''} alt={t.newProductAlt} ratio="1 / 1" />
         </div>
         <div>
           <input
@@ -125,25 +128,25 @@ function NewProductCard({ categories, onChanged }: { categories: Category[]; onC
             type="file"
             accept="image/*"
             onChange={(e) => onPickPhoto(e.target.files?.[0])}
-            className="block text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--color-cobalt)] file:px-3 file:py-1.5 file:text-white"
+            className="block text-sm file:me-3 file:rounded-lg file:border-0 file:bg-[var(--color-cobalt)] file:px-3 file:py-1.5 file:text-white"
           />
           {media.busy && (
-            <p className="mt-2 text-xs text-ink-soft nums">Uploading… {Math.round(media.progress * 100)}%</p>
+            <p className="mt-2 text-xs text-ink-soft nums">{t.uploading(Math.round(media.progress * 100))}</p>
           )}
-          {photoPath && !media.busy && <p className="mt-2 text-xs text-[var(--color-cobalt-ink)]">Stored on-chain ✓</p>}
-          <p className="mt-1 text-[11px] text-ink-soft">Compressed on-chain to a bounded JPEG/WebP.</p>
+          {photoPath && !media.busy && <p className="mt-2 text-xs text-[var(--color-cobalt-ink)]">{t.storedOnChain}</p>}
+          <p className="mt-1 text-[11px] text-ink-soft">{t.compressedNote}</p>
         </div>
       </div>
 
       <div className="mt-4 space-y-3">
-        <Field label="Name"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="Hand-thrown mug" /></Field>
-        <Field label="Description"><textarea className={inputCls} rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Stoneware, 300ml…" /></Field>
+        <Field label={t.fieldName}><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder={t.namePlaceholder} /></Field>
+        <Field label={t.fieldDescription}><textarea className={inputCls} rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t.descPlaceholder} /></Field>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="Price (◈)"><input className={`${inputCls} nums`} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="12.50" /></Field>
-          <Field label="Stock"><input className={`${inputCls} nums`} inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="20" /></Field>
-          <Field label="Category">
+          <Field label={t.fieldPrice}><input className={`${inputCls} nums`} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="12.50" /></Field>
+          <Field label={t.fieldStock}><input className={`${inputCls} nums`} inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="20" /></Field>
+          <Field label={t.fieldCategory}>
             <select className={inputCls} value={catId} onChange={(e) => setCatId(e.target.value)}>
-              <option value="0">None</option>
+              <option value="0">{t.noCategory}</option>
               {categories.map((c) => (
                 <option key={c.id.toString()} value={c.id.toString()}>{c.name}</option>
               ))}
@@ -156,13 +159,14 @@ function NewProductCard({ categories, onChanged }: { categories: Category[]; onC
       {note && <p className="mt-3 text-sm text-[var(--color-cobalt-ink)]">{note}</p>}
 
       <Button className="mt-4 w-full" onClick={create} disabled={!canSubmit}>
-        {busy ? 'Adding…' : 'Add product'}
+        {busy ? t.adding : t.addProduct}
       </Button>
     </Card>
   )
 }
 
 function CategoriesCard({ categories, onChanged }: { categories: Category[]; onChanged: () => void }) {
+  const t = useT()
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string>()
@@ -172,18 +176,18 @@ function CategoriesCard({ categories, onChanged }: { categories: Category[]; onC
     try { await addCategory(name.trim()); setName(''); onChanged() } catch (e) { setErr(errStr(e)) } finally { setBusy(false) }
   }
   return (
-    <Card title="Categories">
+    <Card title={t.categoriesTitle}>
       <div className="mt-3 flex flex-wrap gap-2">
         {categories.map((c) => (
           <span key={c.id.toString()} className="chip" data-on="false" style={{ cursor: 'default' }}>
             {c.name} <span className="nums opacity-60">{c.productCount.toString()}</span>
           </span>
         ))}
-        {categories.length === 0 && <p className="text-sm text-ink-soft">No categories yet.</p>}
+        {categories.length === 0 && <p className="text-sm text-ink-soft">{t.noCategoriesYet}</p>}
       </div>
       <div className="mt-3 flex gap-2">
-        <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="New category" />
-        <Button variant="ghost" onClick={create} disabled={busy || !name.trim()}>Add</Button>
+        <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder={t.newCategoryPlaceholder} />
+        <Button variant="ghost" onClick={create} disabled={busy || !name.trim()}>{t.add}</Button>
       </div>
       {err && <div className="mt-2"><ErrorNote message={err} /></div>}
     </Card>
@@ -191,6 +195,7 @@ function CategoriesCard({ categories, onChanged }: { categories: Category[]; onC
 }
 
 function CatalogueRow({ p, categories, onChanged }: { p: AdminProduct; categories: Category[]; onChanged: () => void }) {
+  const t = useT()
   const media = useMediaUpload(MEDIA_CID)
   const [add, setAdd] = useState('')
   const [busy, setBusy] = useState(false)
@@ -265,21 +270,21 @@ function CatalogueRow({ p, categories, onChanged }: { p: AdminProduct; categorie
         <div className="min-w-0 flex-1">
           <p className="font-medium text-ink line-clamp-1">
             {p.name}
-            {p.archived && <span className="ml-2 rounded-full bg-[var(--color-line)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-soft">archived</span>}
+            {p.archived && <span className="ms-2 rounded-full bg-[var(--color-line)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-soft">{t.archived}</span>}
           </p>
           <p className="text-xs text-ink-soft nums">
-            ◈{formatPrice(p.priceE8s)} · {p.available.toString()} available
-            {p.reserved > 0n && ` (${p.reserved.toString()} held)`}
+            ◈{formatPrice(p.priceE8s)} · {t.available(p.available)}
+            {p.reserved > 0n && ` ${t.heldParen(p.reserved)}`}
             {p.categoryName && ` · ${p.categoryName}`}
           </p>
           {err && <p className="mt-1 text-xs text-[var(--color-sold)]">{err}</p>}
         </div>
         <label className="cursor-pointer text-xs text-[var(--color-cobalt)] hover:underline">
-          {media.busy ? `${Math.round(media.progress * 100)}%` : 'Photo'}
+          {media.busy ? `${Math.round(media.progress * 100)}%` : t.photo}
           <input type="file" accept="image/*" className="hidden" onChange={(e) => replacePhoto(e.target.files?.[0])} />
         </label>
         <button className="text-xs text-[var(--color-cobalt)] hover:underline" onClick={() => setEditing(!editing)}>
-          {editing ? 'Close' : 'Edit'}
+          {editing ? t.close : t.edit}
         </button>
         <div className="flex items-center gap-1">
           <input
@@ -288,22 +293,22 @@ function CatalogueRow({ p, categories, onChanged }: { p: AdminProduct; categorie
             value={add}
             onChange={(e) => setAdd(e.target.value)}
             placeholder="+0"
-            aria-label={`Restock ${p.name}`}
+            aria-label={t.restockAria(p.name)}
           />
-          <Button variant="ghost" className="px-2 py-1 text-xs" onClick={doRestock} disabled={busy || !add}>Restock</Button>
+          <Button variant="ghost" className="px-2 py-1 text-xs" onClick={doRestock} disabled={busy || !add}>{t.restock}</Button>
         </div>
       </div>
 
       {editing && (
         <div className="mt-3 space-y-3 border-t border-[var(--color-line)] pt-3">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Name"><input className={inputCls} value={eName} onChange={(e) => setEName(e.target.value)} /></Field>
-            <Field label="Price (◈)"><input className={`${inputCls} nums`} inputMode="decimal" value={ePrice} onChange={(e) => setEPrice(e.target.value)} /></Field>
+            <Field label={t.fieldName}><input className={inputCls} value={eName} onChange={(e) => setEName(e.target.value)} /></Field>
+            <Field label={t.fieldPrice}><input className={`${inputCls} nums`} inputMode="decimal" value={ePrice} onChange={(e) => setEPrice(e.target.value)} /></Field>
           </div>
-          <Field label="Description"><textarea className={inputCls} rows={2} value={eDesc} onChange={(e) => setEDesc(e.target.value)} /></Field>
-          <Field label="Category">
+          <Field label={t.fieldDescription}><textarea className={inputCls} rows={2} value={eDesc} onChange={(e) => setEDesc(e.target.value)} /></Field>
+          <Field label={t.fieldCategory}>
             <select className={inputCls} value={eCat} onChange={(e) => setECat(e.target.value)}>
-              <option value="0">None</option>
+              <option value="0">{t.noCategory}</option>
               {categories.map((c) => (
                 <option key={c.id.toString()} value={c.id.toString()}>{c.name}</option>
               ))}
@@ -311,9 +316,9 @@ function CatalogueRow({ p, categories, onChanged }: { p: AdminProduct; categorie
           </Field>
           <div className="flex justify-between">
             <Button variant="danger" className="px-3 py-1 text-xs" onClick={toggleArchive} disabled={busy}>
-              {p.archived ? 'Unarchive' : 'Archive'}
+              {p.archived ? t.unarchive : t.archive}
             </Button>
-            <Button className="px-3 py-1 text-xs" onClick={saveEdit} disabled={busy || !eName.trim()}>Save changes</Button>
+            <Button className="px-3 py-1 text-xs" onClick={saveEdit} disabled={busy || !eName.trim()}>{t.saveChanges}</Button>
           </div>
         </div>
       )}

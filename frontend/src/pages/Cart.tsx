@@ -8,26 +8,28 @@ import { formatPrice } from '../lib/config'
 import { pokeCart } from '../lib/format'
 import { MediaImage } from '../components/MediaImage'
 import { PriceTag, Button, Spinner, EmptyState, ErrorNote, QtyStepper } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 /** The cart is editable in place; "Review order" takes a checkout hold (stock
  *  set aside on-chain for ten minutes) and moves to the review step. */
 export function Cart() {
+  const t = useT()
   const nav = useNavigate()
   const { data, loading, error, refetch } = useQuery<CartLine[]>(STORE_CID, M.cartView, undefined, decodeCart)
   const [busyLine, setBusyLine] = useState<bigint>()
   const [reserving, setReserving] = useState(false)
   const [err, setErr] = useState<string>()
 
-  if (loading) return <Spinner label="Loading cart" />
+  if (loading) return <Spinner label={t.loadingCart} />
   if (error) return <ErrorNote message={error} />
   const lines = data ?? []
 
   if (lines.length === 0) {
     return (
       <EmptyState
-        title="Your cart is empty"
-        hint="Browse the shelf and add something you like."
-        action={<Link to="/"><Button>Browse the shop</Button></Link>}
+        title={t.cartEmptyTitle}
+        hint={t.cartEmptyHint}
+        action={<Link to="/"><Button>{t.browseTheShop}</Button></Link>}
       />
     )
   }
@@ -79,7 +81,7 @@ export function Cart() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="font-display text-2xl font-bold">Cart</h1>
+      <h1 className="font-display text-2xl font-bold">{t.cartTitle}</h1>
       <ul className="mt-5 divide-y divide-[var(--color-line)] rounded-[var(--radius-card)] border border-[var(--color-line)] bg-surface">
         {lines.map((l) => (
           <li key={l.productId.toString()} className="flex items-center gap-3 px-4 py-3">
@@ -89,7 +91,7 @@ export function Cart() {
             <div className="min-w-0 flex-1">
               <p className="font-medium text-ink line-clamp-1">{l.name}</p>
               <p className="text-xs text-ink-soft nums">
-                ◈{formatPrice(l.priceE8s)} each · {l.available.toString()} available
+                {t.eachAvailable(formatPrice(l.priceE8s), l.available)}
               </p>
             </div>
             <QtyStepper
@@ -99,13 +101,13 @@ export function Cart() {
               disabled={busyLine === l.productId}
               label={l.name}
             />
-            <span className="w-24 text-right font-display font-semibold nums">◈{formatPrice(l.priceE8s * l.quantity)}</span>
+            <span className="w-24 text-end font-display font-semibold nums">◈{formatPrice(l.priceE8s * l.quantity)}</span>
             <button
               className="rounded-lg p-1.5 text-ink-soft transition hover:text-[var(--color-sold)]"
               onClick={() => removeLine(l)}
               disabled={busyLine === l.productId}
-              aria-label={`Remove ${l.name} from cart`}
-              title="Remove"
+              aria-label={t.removeFromCart(l.name)}
+              title={t.remove}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
@@ -116,20 +118,20 @@ export function Cart() {
       </ul>
 
       <div className="mt-5 flex items-center justify-between">
-        <span className="text-sm text-ink-soft">Total</span>
+        <span className="text-sm text-ink-soft">{t.total}</span>
         <PriceTag e8s={total} size="lg" />
       </div>
 
       {err && <div className="mt-4"><ErrorNote message={err} /></div>}
 
       <div className="mt-6 flex items-center justify-end gap-3">
-        <Link to="/"><Button variant="ghost">Keep shopping</Button></Link>
+        <Link to="/"><Button variant="ghost">{t.keepShopping}</Button></Link>
         <Button onClick={review} disabled={reserving || busyLine !== undefined}>
-          {reserving ? 'Setting stock aside…' : 'Review order'}
+          {reserving ? t.settingAside : t.reviewOrder}
         </Button>
       </div>
-      <p className="mt-3 text-right text-xs text-ink-soft">
-        Reviewing holds your items on-chain for 10 minutes, so nobody can buy them out from under you.
+      <p className="mt-3 text-end text-xs text-ink-soft">
+        {t.holdExplainer}
       </p>
     </div>
   )

@@ -12,6 +12,7 @@
  * olive) so the shelf reads as one market, on both the sand and night themes.
  */
 import type { ReactElement } from 'react'
+import { useT } from '../lib/i18n'
 
 // The set palette — art stays warm and fixed; the arch behind it adapts.
 const P = {
@@ -243,7 +244,7 @@ function GirihTile({ seed, initial }: { seed: bigint; initial: string }) {
       </g>
       <text
         x="100" y="115" textAnchor="middle"
-        fontFamily="'Bricolage Grotesque Variable', sans-serif" fontWeight="800" fontSize="22"
+        fontFamily="'Bricolage Grotesque Variable', 'Cairo Variable', sans-serif" fontWeight="800" fontSize="22"
         fill="var(--color-ink)"
       >{initial.toUpperCase()}</text>
     </g>
@@ -251,9 +252,10 @@ function GirihTile({ seed, initial }: { seed: bigint; initial: string }) {
 }
 
 export function ProductArt({ id, name, className = '' }: { id: bigint; name: string; className?: string }) {
+  const t = useT()
   const curated = CURATED.find(([re]) => re.test(name))?.[1]
   return (
-    <div className={`art-frame ${className}`} aria-label={`${name} — illustration`} role="img">
+    <div className={`art-frame ${className}`} aria-label={t.illustration(name)} role="img">
       <svg viewBox="0 0 200 200">
         {curated ? curated() : <GirihTile seed={id} initial={name.trim().charAt(0) || '◈'} />}
       </svg>

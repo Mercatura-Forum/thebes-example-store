@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom'
 import type { Product } from '../lib/store-api'
 import { MediaImage } from './MediaImage'
 import { PriceTag } from './ui'
+import { useT } from '../lib/i18n'
 
 /** A stall in the arcade: the product's artwork under its arch, the brass
  *  price-tag as the focal accent, availability as a quiet status line.
  *  "Available" is net of other shoppers' checkout holds. */
 export function ProductCard({ p }: { p: Product }) {
+  const t = useT()
   const out = p.available === 0n
   return (
     <Link
@@ -17,8 +19,8 @@ export function ProductCard({ p }: { p: Product }) {
         <span className="arch-inner" />
         <MediaImage path={p.photoPath} alt={p.name} ratio="1 / 1.05" artId={p.id} artName={p.name} />
         {out && (
-          <span className="absolute right-3 top-6 rounded-full bg-[var(--color-sold)] px-2 py-0.5 text-[11px] font-semibold text-white">
-            {p.reserved > 0n ? 'All held' : 'Sold out'}
+          <span className="absolute end-3 top-6 rounded-full bg-[var(--color-sold)] px-2 py-0.5 text-[11px] font-semibold text-white">
+            {p.reserved > 0n ? t.allHeld : t.soldOut}
           </span>
         )}
       </div>
@@ -27,7 +29,7 @@ export function ProductCard({ p }: { p: Product }) {
           <p className="font-display font-semibold leading-tight text-ink line-clamp-1">{p.name}</p>
           <p className="mt-0.5 text-xs text-ink-soft nums">
             {p.categoryName && <span>{p.categoryName} · </span>}
-            {out ? 'none available' : `${p.available.toString()} available`}
+            {out ? t.noneAvailable : t.available(p.available)}
           </p>
         </div>
         <PriceTag e8s={p.priceE8s} />
