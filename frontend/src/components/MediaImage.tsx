@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { mediaUrl } from '@thebes/sdk'
 import { MEDIA_CID } from '../lib/config'
 import { ProductArt } from './ProductArt'
+import { useT } from '../lib/i18n'
 
 /**
  * The universal product visual: a fixed aspect-ratio box. A real uploaded
@@ -26,6 +27,7 @@ export function MediaImage({
   artId?: bigint
   artName?: string
 }) {
+  const t = useT()
   const [loaded, setLoaded] = useState(false)
   if (!path) {
     if (artId !== undefined && artName) {
@@ -39,7 +41,7 @@ export function MediaImage({
       <div
         className={`media grid place-items-center text-ink-soft/50 ${className}`}
         style={{ aspectRatio: ratio }}
-        aria-label={`${alt} — no image`}
+        aria-label={t.noImage(alt)}
       >
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <rect x="3" y="3" width="18" height="18" rx="2" />

@@ -1,6 +1,7 @@
 import type { Category, Product } from '../lib/store-api'
 import { ProductArt } from './ProductArt'
 import { MediaImage } from './MediaImage'
+import { useT } from '../lib/i18n'
 
 /**
  * The aisles of the souk: one wide arch card per category, wearing a fan of
@@ -18,9 +19,10 @@ export function CategoryRail({
   active: bigint
   onPick: (id: bigint) => void
 }) {
+  const t = useT()
   if (categories.length === 0) return null
   return (
-    <section aria-label="Browse by category">
+    <section aria-label={t.byCategory}>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {categories.map((c, i) => {
           const inAisle = products.filter((p) => p.categoryId === c.id)
@@ -31,7 +33,7 @@ export function CategoryRail({
               key={c.id.toString()}
               onClick={() => onPick(on ? 0n : c.id)}
               aria-pressed={on}
-              className={`rise group relative overflow-hidden rounded-[999px_999px_var(--radius-card)_var(--radius-card)] border bg-surface p-5 pt-7 text-left transition hover:-translate-y-1 ${
+              className={`rise group relative overflow-hidden rounded-[999px_999px_var(--radius-card)_var(--radius-card)] border bg-surface p-5 pt-7 text-start transition hover:-translate-y-1 ${
                 on ? 'border-[var(--color-cobalt)] shadow-[0_16px_38px_-18px_rgba(61,77,158,0.45)]' : 'border-[var(--color-line)]'
               }`}
               style={{ animationDelay: `${i * 70}ms` }}
@@ -44,7 +46,7 @@ export function CategoryRail({
               {/* the aisle's faces — up to three of its products, fanned */}
               <div className="relative mx-auto flex h-28 w-full items-end justify-center">
                 {faces.length === 0 ? (
-                  <p className="pb-6 text-sm text-ink-soft">An empty aisle, for now.</p>
+                  <p className="pb-6 text-sm text-ink-soft">{t.emptyAisleCard}</p>
                 ) : (
                   faces.map((p, j) => (
                     <div
@@ -71,9 +73,9 @@ export function CategoryRail({
               <div className="relative mt-3 flex items-baseline justify-between gap-2">
                 <span className="font-display text-lg font-bold text-ink">{c.name}</span>
                 <span className="text-xs text-ink-soft nums">
-                  {c.productCount.toString()} item{c.productCount === 1n ? '' : 's'}
-                  <span className={`ml-2 font-medium ${on ? 'text-[var(--color-cobalt)]' : 'text-[var(--color-gold)]'}`}>
-                    {on ? 'showing ✓' : 'walk this aisle →'}
+                  {t.itemCount(c.productCount)}
+                  <span className={`ms-2 font-medium ${on ? 'text-[var(--color-cobalt)]' : 'text-[var(--color-gold)]'}`}>
+                    {on ? t.showing : t.walkThisAisle}
                   </span>
                 </span>
               </div>

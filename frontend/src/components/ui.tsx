@@ -1,5 +1,6 @@
 import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { formatPrice } from '../lib/config'
+import { useLang, useT } from '../lib/i18n'
 
 /** The signature: a gold, tabular, punched market price-tag. */
 export function PriceTag({ e8s, size = 'md', struck = false }: { e8s: bigint; size?: 'md' | 'lg'; struck?: boolean }) {
@@ -26,11 +27,12 @@ export function Button({ variant = 'primary', className = '', ...props }: BtnPro
   return <button className={`${base} ${styles[variant]} ${className}`} {...props} />
 }
 
-export function Spinner({ label = 'Loading' }: { label?: string }) {
+export function Spinner({ label }: { label?: string }) {
+  const t = useT()
   return (
     <div className="flex items-center gap-2 text-ink-soft text-sm" role="status">
       <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-line)] border-t-[var(--color-cobalt)]" />
-      {label}…
+      {label ?? t.loading}…
     </div>
   )
 }
@@ -70,20 +72,21 @@ export function QtyStepper({
 }: {
   value: number; min?: number; max: number; onChange: (next: number) => void; disabled?: boolean; label: string
 }) {
+  const t = useT()
   return (
     <div className="inline-flex items-center rounded-lg ring-1 ring-[var(--color-line)]">
       <button
         className="px-3 py-1.5 text-lg leading-none disabled:opacity-40"
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={disabled || value <= min}
-        aria-label={`Decrease ${label}`}
+        aria-label={t.decrease(label)}
       >−</button>
       <span className="w-9 text-center text-sm nums" aria-live="polite">{value}</span>
       <button
         className="px-3 py-1.5 text-lg leading-none disabled:opacity-40"
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={disabled || value >= max}
-        aria-label={`Increase ${label}`}
+        aria-label={t.increase(label)}
       >+</button>
     </div>
   )
@@ -91,6 +94,7 @@ export function QtyStepper({
 
 /** Sun/moon theme toggle. Stamps data-theme on <html>; system is the default. */
 export function ThemeToggle() {
+  const t = useT()
   const [theme, setTheme] = useState<string>(() => localStorage.getItem('souk-theme') ?? '')
 
   useEffect(() => {
@@ -111,8 +115,8 @@ export function ThemeToggle() {
     <button
       className="rounded-lg p-2 text-ink-soft transition hover:text-ink"
       onClick={() => setTheme(dark ? 'light' : 'dark')}
-      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-      title={dark ? 'Light mode' : 'Dark mode'}
+      aria-label={dark ? t.themeToLight : t.themeToDark}
+      title={dark ? t.themeLight : t.themeDark}
     >
       {dark ? (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -124,6 +128,23 @@ export function ThemeToggle() {
           <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
         </svg>
       )}
+    </button>
+  )
+}
+
+/** EN ⇄ AR toggle. The label always names the OTHER language — the one the
+ *  click takes you to — in that language's own script. */
+export function LangToggle() {
+  const { lang, setLang, t } = useLang()
+  return (
+    <button
+      className="rounded-lg px-2 py-1.5 text-sm font-semibold text-ink-soft transition hover:text-ink"
+      onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+      aria-label={t.langToggleLabel}
+      title={t.langToggleLabel}
+      lang={lang === 'ar' ? 'en' : 'ar'}
+    >
+      {t.langToggleShort}
     </button>
   )
 }

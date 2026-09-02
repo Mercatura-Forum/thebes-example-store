@@ -1,5 +1,6 @@
 /** Shared formatting for money, quantities and chain time. */
 import { useEffect, useState } from 'react'
+import { currentDateLocale } from './i18n'
 export { formatPrice } from './config'
 
 /** Parse a human price ("12.50") into e8s base units. */
@@ -40,18 +41,18 @@ function toWallDate(ns: bigint): Date | undefined {
   return new Date(Number((ns + chainOffsetNs) / 1_000_000n))
 }
 
-/** Chain time (ns) → short local date ("Jul 7, 2026"). */
+/** Chain time (ns) → short local date ("Jul 7, 2026"), in the UI language. */
 export function whenDate(ns: bigint): string {
   const d = toWallDate(ns)
   if (!d) return '…'
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  return d.toLocaleDateString(currentDateLocale(), { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 /** Chain time (ns) → local date + time (for timelines and the audit feed). */
 export function whenExact(ns: bigint): string {
   const d = toWallDate(ns)
   if (!d) return '…'
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString(currentDateLocale(), {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }

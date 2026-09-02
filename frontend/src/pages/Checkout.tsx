@@ -9,6 +9,7 @@ import { formatPrice } from '../lib/config'
 import { pokeCart, calibrateChainTime } from '../lib/format'
 import { MediaImage } from '../components/MediaImage'
 import { PriceTag, Button, Spinner, EmptyState, ErrorNote, HoldRing } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 const HOLD_SECONDS = 10 * 60
 
@@ -17,6 +18,7 @@ const HOLD_SECONDS = 10 * 60
  *  order atomically. The ring is honest — it counts chain time down to when
  *  the shop releases your hold back to the shelf. */
 export function Checkout() {
+  const t = useT()
   const nav = useNavigate()
   const { data: holds, loading: holdLoading } = useQuery<Hold[]>(STORE_CID, M.holdView, undefined, decodeHold)
   const { data: lines, loading: linesLoading } = useQuery<HoldLine[]>(STORE_CID, M.holdLinesView, undefined, decodeHoldLines)
@@ -44,28 +46,28 @@ export function Checkout() {
       setSecondsLeft(Math.max(0, left))
     }
     tick()
-    const t = window.setInterval(tick, 1000)
-    return () => window.clearInterval(t)
+    const timer = window.setInterval(tick, 1000)
+    return () => window.clearInterval(timer)
   }, [hold])
 
   if (orderId !== undefined) {
     return (
       <EmptyState
-        title={`Order #${orderId.toString()} placed`}
-        hint="Stock moved from the shelf to your order in one atomic step. Track it in Orders."
-        action={<Button onClick={() => nav('/orders')}>View orders</Button>}
+        title={t.orderPlacedTitle(orderId)}
+        hint={t.orderPlacedHint}
+        action={<Button onClick={() => nav('/orders')}>{t.viewOrders}</Button>}
       />
     )
   }
 
-  if (holdLoading || linesLoading) return <Spinner label="Loading your hold" />
+  if (holdLoading || linesLoading) return <Spinner label={t.loadingHold} />
 
   if (!hold || (secondsLeft !== undefined && secondsLeft === 0)) {
     return (
       <EmptyState
-        title={hold ? 'Your hold expired' : 'No active hold'}
-        hint="The stock went back on the shelf for other shoppers. Your cart is untouched — review it again to take a fresh hold."
-        action={<Link to="/cart"><Button>Back to cart</Button></Link>}
+        title={hold ? t.holdExpiredTitle : t.noActiveHold}
+        hint={t.holdGoneHint}
+        action={<Link to="/cart"><Button>{t.backToCart}</Button></Link>}
       />
     )
   }
@@ -97,14 +99,14 @@ export function Checkout() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Review order</h1>
+        <h1 className="font-display text-2xl font-bold">{t.reviewOrder}</h1>
         <HoldRing
           fraction={(secondsLeft ?? 0) / HOLD_SECONDS}
           label={`${mm}:${ss.toString().padStart(2, '0')}`}
         />
       </div>
       <p className="mt-1 text-sm text-ink-soft">
-        These items are set aside for you on-chain until the timer runs out.
+        {t.holdSetAside}
       </p>
 
       <ul className="mt-5 divide-y divide-[var(--color-line)] rounded-[var(--radius-card)] border border-[var(--color-line)] bg-surface">
@@ -124,7 +126,7 @@ export function Checkout() {
 
       {/* Promo code: quoted by the SAME on-chain validation checkout runs. */}
       <div className="mt-5 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-surface p-4">
-        <label className="block text-sm font-medium" htmlFor="promo">Promo code</label>
+        <label className="block text-sm font-medium" htmlFor="promo">{t.promoCode}</label>
         <div className="mt-2 flex gap-2">
           <input
             id="promo"
@@ -133,23 +135,24 @@ export function Checkout() {
             onChange={(e) => setCodeInput(e.target.value)}
             placeholder="WELCOME10"
             autoComplete="off"
+            dir="ltr"
           />
           <Button variant="ghost" onClick={() => setAppliedCode(codeInput.trim())} disabled={!codeInput.trim()}>
-            Apply
+            {t.apply}
           </Button>
           {appliedCode && (
             <Button variant="ghost" onClick={() => { setAppliedCode(''); setCodeInput('') }}>
-              Clear
+              {t.clear}
             </Button>
           )}
         </div>
         {quote && appliedCode && (
           quote.codeOk ? (
             <p className="mt-2 text-sm text-[var(--color-leaf)]">
-              {appliedCode.toUpperCase()} applied — you save ◈{formatPrice(quote.discountE8s)}.
+              {t.promoApplied(appliedCode.toUpperCase(), formatPrice(quote.discountE8s))}
             </p>
           ) : (
-            <p className="mt-2 text-sm text-[var(--color-sold)]">{quote.note || 'That code did not apply.'}</p>
+            <p className="mt-2 text-sm text-[var(--color-sold)]">{quote.note || t.promoRejected}</p>
           )
         )}
       </div>
@@ -157,17 +160,17 @@ export function Checkout() {
       {/* Totals from the on-chain quote — the numbers checkout will charge. */}
       <div className="mt-5 space-y-1.5">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-ink-soft">Subtotal</span>
+          <span className="text-ink-soft">{t.subtotal}</span>
           <span className="nums">◈{formatPrice(quote?.subtotalE8s ?? hold.subtotalE8s)}</span>
         </div>
         {quote && quote.discountE8s > 0n && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-ink-soft">Promo {appliedCode.toUpperCase()}</span>
+            <span className="text-ink-soft">{t.promoLine(appliedCode.toUpperCase())}</span>
             <span className="nums text-[var(--color-leaf)]">−◈{formatPrice(quote.discountE8s)}</span>
           </div>
         )}
         <div className="flex items-center justify-between border-t border-[var(--color-line)] pt-2">
-          <span className="text-sm text-ink-soft">Total</span>
+          <span className="text-sm text-ink-soft">{t.total}</span>
           <PriceTag e8s={quote?.totalE8s ?? hold.subtotalE8s} size="lg" />
         </div>
       </div>
@@ -175,9 +178,9 @@ export function Checkout() {
       {err && <div className="mt-4"><ErrorNote message={err} /></div>}
 
       <div className="mt-6 flex justify-end gap-3">
-        <Button variant="ghost" onClick={abandon}>Release hold</Button>
+        <Button variant="ghost" onClick={abandon}>{t.releaseHold}</Button>
         <Button onClick={place} disabled={placing || (appliedCode !== '' && quote !== undefined && !quote.codeOk)}>
-          {placing ? 'Placing order…' : 'Place order'}
+          {placing ? t.placingOrder : t.placeOrder}
         </Button>
       </div>
     </div>

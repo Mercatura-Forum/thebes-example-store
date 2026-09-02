@@ -5,6 +5,14 @@ a Motoko backend that holds the catalog, carts, checkout holds, orders and
 invoices, and a React frontend served as certified assets — with a procedural
 3D hero, hand-drawn product art, categories and scoped search.
 
+The souk speaks English and Arabic. A header toggle switches the whole
+interface — shopper pages and the back office — between the two, with true
+RTL mirroring (CSS logical properties, no second stylesheet), Arabic set in a
+bundled Cairo variable font, CLDR-correct Arabic plurals via
+`Intl.PluralRules`, and localized dates. A first visit follows the browser
+language; the choice persists. See `frontend/src/lib/i18n.tsx` — one typed
+catalogue, two renderings, and the compiler holds them in parity.
+
 The property this example proves is **inventory conservation**. Every unit that
 enters the shop is accounted across on-hand stock, checkout holds, sales and
 returns, and anyone can re-verify the ledger identity at any time through the

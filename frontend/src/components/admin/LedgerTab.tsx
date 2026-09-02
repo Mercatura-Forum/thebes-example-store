@@ -6,14 +6,16 @@ import {
 } from '../../lib/store-api'
 import { whenExact, shortHex, useChainTime } from '../../lib/format'
 import { Spinner, ErrorNote, Button } from '../ui'
+import { useT } from '../../lib/i18n'
 
 /** The open books: the per-product conservation ledger, the recomputed
  *  invariant report, and the append-only audit trail behind them. */
 export function LedgerTab() {
+  const t = useT()
   const { data: products, loading, error } = useQuery<AdminProduct[]>(STORE_CID, M.adminProductsView, undefined, decodeAdminProducts)
   const { data: violations } = useQuery<InvariantViolation[]>(STORE_CID, M.invariantsView, undefined, decodeViolations)
 
-  if (loading) return <Spinner label="Opening the books" />
+  if (loading) return <Spinner label={t.openingBooks} />
   if (error) return <ErrorNote message={error} />
   const rows = products ?? []
   const bad = violations ?? []
@@ -23,26 +25,25 @@ export function LedgerTab() {
     <div className="space-y-8">
       <section>
         <div className="flex items-baseline justify-between">
-          <h2 className="font-display text-lg font-bold">Inventory ledger</h2>
+          <h2 className="font-display text-lg font-bold">{t.inventoryLedger}</h2>
           <span className={`text-sm font-medium ${bad.length === 0 ? 'text-[var(--color-leaf)]' : 'text-[var(--color-sold)]'}`}>
-            {bad.length === 0 ? '✓ every invariant holds' : `${bad.length} violation${bad.length === 1 ? '' : 's'}`}
+            {bad.length === 0 ? t.invariantsHold : t.violationCount(bad.length)}
           </span>
         </div>
         <p className="mt-1 text-xs text-ink-soft">
-          For every product: on hand + sold = received + returned, and the reserve
-          counter must match active checkout holds. Recomputed on-chain each read.
+          {t.ledgerExplainer}
         </p>
         <div className="mt-4 overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-line)]">
           <table className="w-full min-w-[560px] bg-surface text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-line)] text-left text-xs uppercase tracking-wide text-ink-soft">
-                <th className="px-3 py-2 font-medium">Product</th>
-                <th className="px-3 py-2 text-right font-medium">Received</th>
-                <th className="px-3 py-2 text-right font-medium">Sold</th>
-                <th className="px-3 py-2 text-right font-medium">Returned</th>
-                <th className="px-3 py-2 text-right font-medium">On hand</th>
-                <th className="px-3 py-2 text-right font-medium">Held</th>
-                <th className="px-3 py-2 text-center font-medium">Books</th>
+              <tr className="border-b border-[var(--color-line)] text-start text-xs uppercase tracking-wide text-ink-soft">
+                <th className="px-3 py-2 text-start font-medium">{t.thProduct}</th>
+                <th className="px-3 py-2 text-end font-medium">{t.thReceived}</th>
+                <th className="px-3 py-2 text-end font-medium">{t.thSold}</th>
+                <th className="px-3 py-2 text-end font-medium">{t.thReturned}</th>
+                <th className="px-3 py-2 text-end font-medium">{t.thOnHand}</th>
+                <th className="px-3 py-2 text-end font-medium">{t.thHeld}</th>
+                <th className="px-3 py-2 text-center font-medium">{t.thBooks}</th>
               </tr>
             </thead>
             <tbody>
@@ -52,14 +53,14 @@ export function LedgerTab() {
                   <tr key={p.id.toString()} className="border-b border-[var(--color-line)] last:border-0">
                     <td className="px-3 py-2">
                       <span className="font-medium text-ink">{p.name}</span>
-                      {p.archived && <span className="ml-1.5 text-[10px] uppercase text-ink-soft">archived</span>}
+                      {p.archived && <span className="ms-1.5 text-[10px] uppercase text-ink-soft">{t.archived}</span>}
                     </td>
-                    <td className="px-3 py-2 text-right nums">{p.received.toString()}</td>
-                    <td className="px-3 py-2 text-right nums">{p.sold.toString()}</td>
-                    <td className="px-3 py-2 text-right nums">{p.returned.toString()}</td>
-                    <td className="px-3 py-2 text-right nums">{p.onHand.toString()}</td>
-                    <td className="px-3 py-2 text-right nums">{p.reserved.toString()}</td>
-                    <td className="px-3 py-2 text-center" title={pv.map((v) => v.rule).join(', ') || 'balanced'}>
+                    <td className="px-3 py-2 text-end nums">{p.received.toString()}</td>
+                    <td className="px-3 py-2 text-end nums">{p.sold.toString()}</td>
+                    <td className="px-3 py-2 text-end nums">{p.returned.toString()}</td>
+                    <td className="px-3 py-2 text-end nums">{p.onHand.toString()}</td>
+                    <td className="px-3 py-2 text-end nums">{p.reserved.toString()}</td>
+                    <td className="px-3 py-2 text-center" title={pv.map((v) => v.rule).join(', ') || t.balanced}>
                       {pv.length === 0
                         ? <span className="text-[var(--color-leaf)]">✓</span>
                         : <span className="font-medium text-[var(--color-sold)]">✗ {pv.map((v) => v.rule).join(', ')}</span>}
@@ -68,7 +69,7 @@ export function LedgerTab() {
                 )
               })}
               {rows.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-ink-soft">No products on the books yet.</td></tr>
+                <tr><td colSpan={7} className="px-3 py-6 text-center text-ink-soft">{t.noProductsOnBooks}</td></tr>
               )}
             </tbody>
           </table>
@@ -83,6 +84,7 @@ export function LedgerTab() {
 const PAGE = 25
 
 function AuditFeed() {
+  const t = useT()
   const [offset, setOffset] = useState(0)
   useChainTime() // re-render once chain→wall calibration lands
   const arg = useMemo(() => argPage(offset, PAGE), [offset])
@@ -90,10 +92,9 @@ function AuditFeed() {
 
   return (
     <section>
-      <h2 className="font-display text-lg font-bold">Audit trail</h2>
+      <h2 className="font-display text-lg font-bold">{t.auditTrail}</h2>
       <p className="mt-1 text-xs text-ink-soft">
-        Append-only. Every state change lands here with its actor — buyers see
-        their order's slice of this same log.
+        {t.auditExplainer}
       </p>
       {loading ? (
         <div className="mt-4"><Spinner /></div>
@@ -107,18 +108,18 @@ function AuditFeed() {
                 <span className="w-28 shrink-0 text-ink-soft nums">{whenExact(e.at)}</span>
                 <code className="rounded bg-[var(--color-paper)] px-1.5 py-0.5 font-medium text-[var(--color-cobalt-ink)]">{e.kind}</code>
                 <span className="text-ink">{e.detail}</span>
-                {e.orderId > 0n && <span className="text-ink-soft nums">order #{e.orderId.toString()}</span>}
-                {e.productId > 0n && <span className="text-ink-soft nums">product #{e.productId.toString()}</span>}
-                <span className="ml-auto text-ink-soft/70 nums" title={e.who}>{shortHex(e.who)}</span>
+                {e.orderId > 0n && <span className="text-ink-soft nums">{t.auditOrderRef(e.orderId)}</span>}
+                {e.productId > 0n && <span className="text-ink-soft nums">{t.auditProductRef(e.productId)}</span>}
+                <span className="ms-auto text-ink-soft/70 nums" title={e.who}>{shortHex(e.who)}</span>
               </li>
             ))}
             {(data ?? []).length === 0 && (
-              <li className="px-4 py-6 text-center text-sm text-ink-soft">Nothing here yet at this page.</li>
+              <li className="px-4 py-6 text-center text-sm text-ink-soft">{t.nothingAtPage}</li>
             )}
           </ol>
           <div className="mt-3 flex items-center justify-between">
-            <Button variant="ghost" onClick={() => setOffset(Math.max(0, offset - PAGE))} disabled={offset === 0}>← Newer</Button>
-            <Button variant="ghost" onClick={() => setOffset(offset + PAGE)} disabled={(data ?? []).length < PAGE}>Older →</Button>
+            <Button variant="ghost" onClick={() => setOffset(Math.max(0, offset - PAGE))} disabled={offset === 0}>{t.newer}</Button>
+            <Button variant="ghost" onClick={() => setOffset(offset + PAGE)} disabled={(data ?? []).length < PAGE}>{t.older}</Button>
           </div>
         </>
       )}

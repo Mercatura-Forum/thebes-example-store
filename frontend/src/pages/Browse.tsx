@@ -10,10 +10,12 @@ import { ProductArt } from '../components/ProductArt'
 import { CategoryRail } from '../components/CategoryRail'
 import { Hero3D } from '../components/Hero3D'
 import { Spinner, EmptyState, ErrorNote, Button } from '../components/ui'
+import { useT } from '../lib/i18n'
 
 /** Category scope + search live in the URL hash (#/?cat=2&q=mug), so any view
  *  of the souk is a shareable link. */
 export function Browse() {
+  const t = useT()
   const { data, loading, error } = useQuery<Product[]>(
     STORE_CID,
     M.productsView,
@@ -45,15 +47,15 @@ export function Browse() {
     shelfRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [apply, q])
 
-  if (loading) return <Spinner label="Opening the souk" />
+  if (loading) return <Spinner label={t.openingSouk} />
   if (error) return <ErrorNote message={error} />
   const products = data ?? []
   if (products.length === 0) {
     return (
       <EmptyState
-        title="The stalls are empty"
-        hint="This souk has no products yet. Open Admin to add the first one — with its own on-chain artwork."
-        action={<Link to="/admin"><Button>Go to Admin</Button></Link>}
+        title={t.stallsEmptyTitle}
+        hint={t.stallsEmptyHint}
+        action={<Link to="/admin"><Button>{t.goToAdmin}</Button></Link>}
       />
     )
   }
@@ -68,10 +70,10 @@ export function Browse() {
     : scoped
 
   const shelfTitle = needle
-    ? `“${q.trim()}” ${activeCat ? `in ${activeCat.name}` : 'across the souk'}`
+    ? (activeCat ? t.searchIn(q.trim(), activeCat.name) : t.searchAcross(q.trim()))
     : activeCat
       ? activeCat.name
-      : 'Walk the stalls'
+      : t.walkTheStalls
 
   return (
     <div className="space-y-14">
@@ -86,31 +88,30 @@ export function Browse() {
             : <Hero3D onFail={onHeroFail} />}
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-gold)]">An on-chain souk</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-gold)]">{t.heroKicker}</p>
           <h1 className="font-display mt-3 text-5xl font-extrabold leading-[0.96] text-ink md:text-7xl" style={{ textWrap: 'balance' }}>
-            A market that keeps honest books.
+            {t.heroTitle}
           </h1>
           <p className="mt-5 max-w-prose text-lg leading-relaxed text-ink-soft">
-            Hand-picked goods on an open ledger. The shelves, the checkout holds
-            and the audit all live on-chain — nothing behind the counter.
+            {t.heroLede}
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-4">
             <Button onClick={() => shelfRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-              Walk the stalls
+              {t.walkTheStalls}
             </Button>
             <Link to="/orders" className="text-sm font-medium text-[var(--color-cobalt)] hover:underline">
-              Track an order →
+              {t.trackAnOrder}
             </Link>
           </div>
           {seal && (
-            <p className="market-strip mt-8">
-              <span><b className="nums">{seal.productsChecked.toString()}</b> products</span>
-              <span><b className="nums">{seal.unitsOnHand.toString()}</b> units on the shelves</span>
+            <p className="market-strip mt-8 nums">
+              <span>{t.stripProducts(seal.productsChecked)}</span>
+              <span>{t.stripUnits(seal.unitsOnHand)}</span>
               {seal.unitsReserved > 0n && (
-                <span><b className="nums">{seal.unitsReserved.toString()}</b> held at checkout</span>
+                <span>{t.stripHeld(seal.unitsReserved)}</span>
               )}
               <span className={seal.violations === 0n ? 'text-[var(--color-leaf)]' : 'text-[var(--color-sold)]'}>
-                {seal.violations === 0n ? '✓ books audited on-chain' : '✗ audit found violations'}
+                {seal.violations === 0n ? t.stripAudited : t.stripViolations}
               </span>
             </p>
           )}
@@ -126,25 +127,25 @@ export function Browse() {
           <div className="flex flex-wrap items-center gap-2">
             {/* Search — scoped to the active aisle, instant, in the URL. */}
             <label className="relative">
-              <span className="sr-only">Search the souk</span>
+              <span className="sr-only">{t.searchSouk}</span>
               <svg
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft/60"
+                className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-ink-soft/60"
                 width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden
               >
                 <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" />
               </svg>
               <input
-                className="w-56 rounded-full border border-[var(--color-line)] bg-surface py-1.5 pl-9 pr-8 text-sm text-ink outline-none transition focus:border-[var(--color-cobalt)]"
-                placeholder={activeCat ? `Search ${activeCat.name}…` : 'Search the souk…'}
+                className="w-56 rounded-full border border-[var(--color-line)] bg-surface py-1.5 ps-9 pe-8 text-sm text-ink outline-none transition focus:border-[var(--color-cobalt)]"
+                placeholder={activeCat ? t.searchCatPlaceholder(activeCat.name) : t.searchPlaceholder}
                 value={q}
                 onChange={(e) => { setQ(e.target.value); apply(catFilter, e.target.value) }}
-                aria-label={activeCat ? `Search within ${activeCat.name}` : 'Search all products'}
+                aria-label={activeCat ? t.searchCatAria(activeCat.name) : t.searchAllAria}
               />
               {q && (
                 <button
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink"
+                  className="absolute end-2.5 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink"
                   onClick={() => { setQ(''); apply(catFilter, '') }}
-                  aria-label="Clear search"
+                  aria-label={t.clearSearch}
                 >✕</button>
               )}
             </label>
@@ -157,18 +158,18 @@ export function Browse() {
         </div>
         {shelf.length === 0 ? (
           <EmptyState
-            title={needle ? `Nothing matches “${q.trim()}”` : 'Nothing in this aisle yet'}
+            title={needle ? t.noMatchTitle(q.trim()) : t.emptyAisleTitle}
             hint={
               needle
                 ? activeCat
-                  ? `No ${activeCat.name.toLowerCase()} match that. Try the whole souk, or clear the search.`
-                  : 'Try a different word — or wander the aisles instead.'
-                : 'The shopkeeper is still stocking this corner of the market.'
+                  ? t.noMatchInCatHint(activeCat.name)
+                  : t.noMatchHint
+                : t.emptyAisleHint
             }
             action={
               <div className="flex justify-center gap-2">
-                {needle && <Button variant="ghost" onClick={() => { setQ(''); apply(catFilter, '') }}>Clear search</Button>}
-                {(activeCat || needle) && <Button onClick={() => { setQ(''); apply(0n, '') }}>Show everything</Button>}
+                {needle && <Button variant="ghost" onClick={() => { setQ(''); apply(catFilter, '') }}>{t.clearSearch}</Button>}
+                {(activeCat || needle) && <Button onClick={() => { setQ(''); apply(0n, '') }}>{t.showEverything}</Button>}
               </div>
             }
           />
